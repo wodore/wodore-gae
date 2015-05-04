@@ -86,10 +86,6 @@ Contributions and Ideas
   - [xcash][]
   - [mdxs][]
 
-Author
-------
-
-[![Lipis flair on stackoverflow.com][lipisflair]][lipis]
 
 [bootstrap]: http://getbootstrap.com/
 [bower]: http://bower.io/

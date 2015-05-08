@@ -9,8 +9,11 @@ if os.environ.get('SERVER_SOFTWARE', '').startswith('Google App Engine'):
 else:
   import re
   from google.appengine.tools.devappserver2.python import stubs
-  re_ = stubs.FakeFile._skip_files.pattern.replace('|^lib/.*', '')
-  re_ = re.compile(re_)
-  stubs.FakeFile._skip_files = re_
+  try:
+    re_ = stubs.FakeFile._skip_files.pattern.replace('|^lib/.*', '')
+    re_ = re.compile(re_)
+    stubs.FakeFile._skip_files = re_
+  except AttributeError:
+    print "[appengine_config] Replace lib didn't work"
   sys.path.insert(0, 'lib')
 sys.path.insert(0, 'libx')

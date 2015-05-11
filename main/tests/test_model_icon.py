@@ -105,16 +105,13 @@ class TestIcon(unittest.TestCase):
 
   def test_add_one_icon(self):
     icon = Icon()
-    print "Icon pre add and put: {}".format(icon)
-    icon_key = icon.add_and_put(self.i1s_name,'one')
+    icon.collection = 'one'
+    icon.icon = self.i1s_name
+    icon_key = icon._add_and_put()
     assert icon.toplevel is not None
-    print "Icon post add and put: {}".format(icon)
-    #print "Icon toplevel: {}".format(icon.icon.toplevel)
-    print "Icon key: {}".format(icon_key)
 
     #get new created toplevel
     top = icon.toplevel.get()
-    print "Top icon: {}".format(top)
     self.assertEqual(top.icon.name,'i1s_name')
     self.assertEqual(top.collection,'global')
     self.assertEqual(top.count,1)
@@ -122,7 +119,9 @@ class TestIcon(unittest.TestCase):
     self.assertEqual(icon.collection,'one')
 
     # Add the same again with different collection
-    icon_key = icon.add_and_put(self.i1s_name,'one')
+    icon.collection = 'one'
+    icon.icon = self.i1s_name
+    icon_key = icon._add_and_put()
     #get new created toplevel
     top = icon.toplevel.get()
     self.assertEqual(top.count,2)
@@ -130,28 +129,87 @@ class TestIcon(unittest.TestCase):
 
   def test_add_multiple_icon_collections(self):
     icon = Icon()
-    icon_key = icon.add_and_put(self.i1s_name,'one')
+    icon.collection = 'one'
+    icon.icon = self.i1s_name
+    icon_key = icon._add_and_put()
 
     #get new created toplevel
     top = icon.toplevel.get()
     self.assertEqual(top.count,1)
     self.assertEqual(icon.count,1)
 
-    print "Parameter icon: {}".format(icon)
-    print "Parameter top: {}".format(top)
     icon2 = Icon()
     icon2.toplevel = icon.toplevel
-    icon_key = icon2.add_and_put(icon.icon,'two')
-    print "Parameter icon2: {}".format(icon2)
+    icon2.collection = 'two'
+    icon2.icon = icon.icon
+    icon_key = icon2._add_and_put()
     #get new created toplevel
     top2 = icon2.toplevel.get()
     self.assertEqual(top2.count,2)
     self.assertEqual(icon2.count,1)
     self.assertEqual(icon.count,1)
-    print "Parameter top2: {}".format(top)
+
+  def test_create_icon(self):
+    """Test creates new icon.
+    1. A 'global' icon
+    2. Two children
+    3. A 'children' icon without a topevel icon
+    """
+    key = Icon.create(icon=self.i1s_name)
+    icon_db = key.get()
+    self.assertEqual(icon_db.key , key)
+    self.assertEqual(icon_db.icon.icon_key , key)
+    self.assertEqual(icon_db.collection , 'global')
+    self.assertEqual(getattr(icon_db,'toplevel',None) , None)
+    # create the same with collection
+    key2 = Icon.create(icon=self.i1s_name,
+        collection='one_cat',
+        toplevel=key)
+    icon2_db = key2.get()
+    self.assertEqual(icon2_db.icon.icon_key , key2)
+    self.assertEqual(icon2_db.collection , 'one_cat')
+    self.assertEqual(icon2_db.count,1)
+    key3 = Icon.create(icon=self.i1s_name,
+        collection='two_cat',
+        toplevel=key)
+    icon_db = key.get()
+    self.assertEqual(icon_db.count,3)
+    # auto=False, no  new toplevel
+    key4 = Icon.create(icon=self.i1s_name,
+        collection='two_cat',
+        auto = False)
+    icon4_db = key.get()
+    self.assertEqual(icon4_db.count,3)
+    self.assertEqual(icon4_db.toplevel,None)
 
 
+#class TestIconModel(Iconize, ndb.Model):
+#  """This is a test class for trying out tags
+#  """
+#  name = ndb.StringProperty()
+#
+#
+#class TestTags(unittest.TestCase):
+#
+#  # enable the datastore stub
+#  nosegae_datastore_v3 = True
+#  nosegae_memcache = True
+#
+#  def setUp(self):
+#    pass
+#
+#  def tearDown(self):
+#    pass
+#
+#
+#  def test_init(self):
+#    im = TestIconModel(name="X")
+#    im.put()
 
+
+    #icon_top_db = icon_db.toplevel.get()
+    #self.assertEqual(icon_top_db.collection , 'global')
+    print key
 
 
 

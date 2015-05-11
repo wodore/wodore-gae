@@ -32,26 +32,46 @@ class Icon(CountableLazy, ndb.Model):
     self.icon.icon_key = self.key
     return self.icon
 
-  def add_and_put(self, icon, collection, auto=True):
-    #TODO if incr is used are the collections not respected
-#TODO add a better add_and_put
-    #print  "Start with add_and_put, self.toplevel is: {}".format(getattr(self,'toplevel',None))
-    if not getattr(self,'toplevel',None): #\
-        #or not collection \
-        #or collection is not "global":
-      top = Icon(icon=icon)
-      #top.incr()
+  @classmethod
+  def create(cls,icon,collection='global',toplevel=None,private=False, auto=True):
+    """ Creates and puts a new icon to the database.
+    Returns Icon key"""
+    new_icon = Icon(icon = icon,
+        collection=collection,
+        private=private)
+    if toplevel:
+      new_icon.toplevel = toplevel
+
+    key = new_icon._add_and_put(auto=auto)
+    return key
+
+  def add(cls,key=None,collection='global',toplevel=None):
+    if key:
+      icon_db = key.get()
+      if icon_db.collection == collection:
+        icon_db.incr()
+        icon_db.put()
+      else:
+        pass
+        #TODO: check if colleciton already exists
+        # If not create a new icon
+    elif toplevel:
+      pass
+      #TODO: Look for entries with smae toplevel and colection
+      #      If any exist increment them
+      #      Else create new one
+
+
+
+  def _add_and_put(self, auto=True):
+    if not getattr(self,'toplevel',None) and self.collection != 'global' and auto: #\
+      top = Icon(icon=self.icon)
       top_key = top.put()
       self.toplevel = top_key
-      #print "Parameter icon: {}".format(icon)
-      self.icon = icon
 
-    self.collection = collection
-
-    #print "Icon internal object self: {}".format(self)
-    #print "Icon internal object self.icon.toplevel: {}".format(self.icon.toplevel)
     self.incr()
     self.put()
+    self.get_icon()
     return self.key
 
 
@@ -71,7 +91,6 @@ class Iconize(ndb.Model): # use the counter mixin
   def _post_put_hook(self, future):
     """Modify the associated Tag instances to reflect any updates
     """
-    print self.icon
     old_icon = getattr(self,'_tm_icon',{})
     new_icon = getattr(self,'icon',{})
     # new icon?
@@ -79,8 +98,6 @@ class Iconize(ndb.Model): # use the counter mixin
       # Get the key for this post
       icon = Icon(icon=new_icon)
       icon_key = icon.put()
-      print old_icon
-      print new_icon
       self.icon.icon_key = icon_key
       #self_key = future.get_result()
 

@@ -33,11 +33,11 @@ class CountableLazy(object):
 
   def _pre_put_hook(self):
     if getattr(self,'toplevel',None):
-      if getattr(self,'_orig_collision',None):
-        if self._orig_collision != self.collision:
+      if getattr(self,'_orig_collection',None):
+        if self._orig_collection != self.collection:
           raise UserWarning("It is not possible to have different collision values \
           The 'get' collision value was: {col1}, but now it is {col2}". \
-            format( col1=self._orig_collision,col2=self.collision))
+            format( col1=self._orig_collection,col2=self.collection))
 
       top = self.toplevel.get()
       top.incr(self._incr)

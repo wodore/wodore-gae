@@ -182,6 +182,62 @@ class TestIcon(unittest.TestCase):
     self.assertEqual(icon4_db.count,3)
     self.assertEqual(icon4_db.toplevel,None)
 
+  def test_add_icon(self):
+    """ Test for adding icons """
+    # Create global icon
+    key = Icon.create(icon=self.i1s_name)
+    # Add a second
+    Icon.add(key)
+    icon_db = key.get()
+    self.assertEqual(icon_db.count,2)
+    self.assertEqual(icon_db.collection , 'global')
+    # Add a thrid but with collection
+    # should increase 'global' counter and create a new child with
+    # this collection
+    key2 = Icon.add(key,collection='test1')
+    icon_db = key.get()
+    icon2_db = key2.get()
+    self.assertEqual(icon_db.count,3)
+    self.assertEqual(icon2_db.count,1)
+    self.assertEqual(icon2_db.collection,'test1')
+    # add the same again, not new icon should be created
+    key3 = Icon.add(key,collection='test1')
+    self.assertEqual(key2,key3)
+    icon2_db = key2.get()
+    self.assertEqual(icon2_db.count,2)
+    # and a third time the same
+    key4 = Icon.add(key,collection='test1')
+    self.assertEqual(key2,key4)
+    icon2_db = key2.get()
+    icon_db = key.get()
+    self.assertEqual(icon_db.count,5)
+    self.assertEqual(icon2_db.count,3)
+    ######
+    # Test the same but with 'test1' as key
+    # A "neighbour" icon should be added
+    keyA = Icon.add(key2,collection='test2')
+    icon_db = key.get()
+    icon2_db = key2.get()
+    iconA_db = keyA.get()
+    self.assertEqual(icon_db.count,6)
+    self.assertEqual(iconA_db.count,1)
+    self.assertEqual(iconA_db.collection,'test2')
+    self.assertEqual(iconA_db.toplevel,key)
+    self.assertEqual(icon2_db.count,3)
+    ######
+    # Test the same but with 'test1a' as toplevel key
+    # A "children" icon should be added
+    key2a = Icon.add(key2,collection='test1a',as_child=True)
+    icon_db = key.get()
+    icon2_db = key2.get()
+    icon2a_db = key2a.get()
+    self.assertEqual(icon_db.count,7)
+    self.assertEqual(icon2a_db.count,1)
+    self.assertEqual(icon2a_db.collection,'test1a')
+    self.assertEqual(icon2a_db.toplevel,key2)
+    self.assertEqual(icon2_db.count,4)
+
+
 
 #class TestIconModel(Iconize, ndb.Model):
 #  """This is a test class for trying out tags
@@ -209,7 +265,7 @@ class TestIcon(unittest.TestCase):
 
     #icon_top_db = icon_db.toplevel.get()
     #self.assertEqual(icon_top_db.collection , 'global')
-    print key
+    #print key
 
 
 

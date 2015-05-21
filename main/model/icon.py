@@ -96,10 +96,10 @@ class Icon(CountableLazy, ndb.Model):
         toplevel = icon_db.toplevel
 
     ## Look for icons with same toplevel and collection
-    keys = Icon.by_toplevel(toplevel, collection=collection, keys_only=True)
+    keys = Icon.get_by_toplevel(toplevel, collection=collection, keys_only=True, limit=1)
     if keys:
       #for key in keys:
-      key = keys
+      key = keys[0]
       return Icon.add(key,collection)
     else:
       return Icon.create(icon_db.icon,collection=collection,toplevel=toplevel)
@@ -108,10 +108,17 @@ class Icon(CountableLazy, ndb.Model):
 
 
   @classmethod
-  def by_toplevel(cls, toplevel, collection=None, private=False, keys_only=False):
-    """Returns a icon keys defined by its toplevel and some addition parameters"""
-# TODO implement this method, maybe even a low level method first
-    return cls.query(cls.toplevel==toplevel,cls.collection==collection).order(-cls.cnt).get( keys_only=keys_only)
+  def get_by_toplevel(cls, toplevel, collection=None, private=False, keys_only=False, limit=100):
+    """Returns icon dbs or keys defined by its toplevel and some addition parameters"""
+# TODO Private has no effect yet.
+    if not toplevel and not collection:
+      return cls.query(cls.collection=='global').order(-cls.cnt).\
+          fetch( keys_only=keys_only, limit=limit)
+    if not collection:
+      return cls.query(cls.toplevel==toplevel).order(-cls.cnt).\
+          fetch( keys_only=keys_only, limit=limit)
+    return cls.query(cls.toplevel==toplevel,cls.collection==collection).\
+        order(-cls.cnt).fetch( keys_only=keys_only, limit=limit)
     return False
 
 

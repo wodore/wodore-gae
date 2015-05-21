@@ -237,6 +237,36 @@ class TestIcon(unittest.TestCase):
     self.assertEqual(icon2a_db.toplevel,key2)
     self.assertEqual(icon2_db.count,4)
 
+  def test_get_icon_by_toplevel(self):
+    key = Icon.create(icon=self.i1s_name)
+    for i in range(0,10):
+      key2 = Icon.add(key,collection='test2')
+      key3 = Icon.add(key,collection='test3')
+      key3a = Icon.add(key3,collection='test3a',as_child=True)
+      key10 = Icon.add(key,collection='test{}'.format(i+10))
+    icon_db = key.get()
+    icon2_db = key2.get()
+    icon3_db = key3.get()
+    icon3a_db = key3a.get()
+    self.assertEqual(icon_db.count,41)
+    self.assertEqual(icon2_db.count,10)
+    self.assertEqual(icon3_db.count,20)
+    self.assertEqual(icon3a_db.count,10)
+    dbs = Icon.get_by_toplevel(key)
+    self.assertEqual(len(dbs),12)
+    ## check order
+    self.assertTrue(dbs[0].cnt > dbs[-1].cnt)
+    # get all toplevel
+    # create a new global key
+    keyNew = Icon.create(icon=self.i1s_name)
+    top_dbs = Icon.get_by_toplevel(None)
+    self.assertEqual(len(top_dbs),2)
+    # test with collections
+    test2_dbs = Icon.get_by_toplevel(key,collection='test2')
+    test12_dbs = Icon.get_by_toplevel(key,collection='test12')
+    self.assertEqual(len(test2_dbs),1)
+    self.assertEqual(len(test12_dbs),1)
+
 
 
 #class TestIconModel(Iconize, ndb.Model):

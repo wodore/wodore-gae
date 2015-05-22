@@ -20,13 +20,13 @@ class IconStructure(ndb.Model): # use the counter mixin
   """Basic icon class
   """
   icon_key = ndb.KeyProperty(required=False)
-  name = ndb.StringProperty(indexed=True)
   data = ndb.BlobProperty()
   external_source = ndb.StringProperty(indexed=False) # not recommended
   filetype = ndb.StringProperty(choices=['svg','png','external'],indexed=True,
                      default='svg', required=True)
 
 class Icon(CountableLazy, ndb.Model):
+  name = ndb.StringProperty(indexed=True,required=True)
   icon = ndb.StructuredProperty(IconStructure)
   private = ndb.BooleanProperty(required=True,default=False)
   created = ndb.DateTimeProperty(auto_now_add=True)
@@ -50,10 +50,11 @@ class Icon(CountableLazy, ndb.Model):
     return self.icon
 
   @classmethod
-  def create(cls,icon,collection='global',toplevel=None,private=False, auto=True):
+  def create(cls,icon,name,collection='global',toplevel=None,private=False, auto=True):
     """ Creates and puts a new icon to the database.
     Returns Icon key"""
     new_icon = Icon(icon = icon,
+        name=name,
         collection=collection,
         private=private)
     if toplevel:
@@ -71,7 +72,7 @@ class Icon(CountableLazy, ndb.Model):
 
     If the collection is different two things can happen:
 
-    1. If the key's collection is 'global' (not toplevel) or 'as_child' is true:
+    1. If the key's collection is 'global' (no toplevel) or 'as_child' is true:
        The key is assigned as toplevel.
        ('as_child' means the icon is added with key as toplevel)
 
@@ -102,24 +103,49 @@ class Icon(CountableLazy, ndb.Model):
       key = keys[0]
       return Icon.add(key,collection)
     else:
-      return Icon.create(icon_db.icon,collection=collection,toplevel=toplevel)
+      return Icon.create(icon_db.icon,icon_db.name,collection=collection,toplevel=toplevel)
 
+  @classmethod
+  def remove(cls,key):
+    """Removes a icon by its key
 
+    Remove means its counter is decreased by one"""
+    icon_db = key.get()
+    icon_db.decr()
+    icon_db.put()
 
 
   @classmethod
-  def get_by_toplevel(cls, toplevel, collection=None, private=False, keys_only=False, limit=100):
+  def qry(cls, toplevel=None, name=None, collection=None, private=False,
+      replaced_by=None, order_by_count=True, **kwargs):
+    """Query for the icon model"""
+    qry = cls.query(**kwargs)
+    if toplevel:
+      qry_tmp = qry
+      qry = qry.filter(cls.toplevel==toplevel)
+    if name:
+      qry_tmp = qry
+      qry = qry.filter(cls.name==name,)
+    if collection:
+      qry_tmp = qry
+      qry = qry.filter(cls.collection == collection)
+    if not private:
+      qry_tmp = qry
+      qry = qry_tmp.filter(cls.private==False)
+    if order_by_count:
+      qry_tmp = qry
+      qry = qry.order(-cls.cnt)
+    #else filter for private True and False
+
+    return qry
+
+  @classmethod
+  def get_by_toplevel(cls, toplevel=None, collection=None, private=False,
+      keys_only=False, limit=100):
     """Returns icon dbs or keys defined by its toplevel and some addition parameters"""
-# TODO Private has no effect yet.
-    if not toplevel and not collection:
-      return cls.query(cls.collection=='global').order(-cls.cnt).\
-          fetch( keys_only=keys_only, limit=limit)
-    if not collection:
-      return cls.query(cls.toplevel==toplevel).order(-cls.cnt).\
-          fetch( keys_only=keys_only, limit=limit)
-    return cls.query(cls.toplevel==toplevel,cls.collection==collection).\
-        order(-cls.cnt).fetch( keys_only=keys_only, limit=limit)
-    return False
+    return cls.qry(toplevel=toplevel,collection=collection,private=private).\
+        fetch(keys_only=keys_only, limit=limit)
+
 
 
   def _add_and_put(self, auto=True):
@@ -130,7 +156,7 @@ class Icon(CountableLazy, ndb.Model):
     done manually.
     """
     if not getattr(self,'toplevel',None) and self.collection != 'global' and auto: #\
-      top = Icon(icon=self.icon)
+      top = Icon(icon=self.icon,name=self.name)
       top_key = top.put()
       self.toplevel = top_key
 
@@ -141,42 +167,39 @@ class Icon(CountableLazy, ndb.Model):
 
 
 
-
-
-
-
 class Iconize(ndb.Model): # use the counter mixin
+  """Adds an icon property
+
+  Icons are managed in the 'Icon' model, this mzixins
+  adds two methods to deal with icons:
+    'add_icon': if an icon already exists it can be added by its key
+    'create_icon': create a new icon
+
+  The two method 'put' the icons automatically, this means it is recommanded to
+  put the iconized model as well or remove the icon again if something went wrong.
+    """
   icon = ndb.StructuredProperty(IconStructure)
 
-  def _post_get_hook(self, future):
-    """Set the _tm_tags so we can compare for changes in pre_put
-    """
-    self._tm_icon = future.get_result().icon
+  def add_icon(self, key):
+    """Adds an icon by key, the key is either a toplevel key or an icon key."""
+    if not getattr(self,'collection',None):
+      col = 'global'
+    else:
+      col = self.collection
+    key = Icon.add(key,collection=col)
+    self.icon = key.get().get_icon()
 
-  def _post_put_hook(self, future):
-    """Modify the associated Tag instances to reflect any updates
-    """
-    old_icon = getattr(self,'_tm_icon',{})
-    new_icon = getattr(self,'icon',{})
-    # new icon?
-    if old_icon != new_icon:
-      # Get the key for this post
-      icon = Icon(icon=new_icon)
-      icon_key = icon.put()
-      self.icon.icon_key = icon_key
-      #self_key = future.get_result()
+  def create_icon(self,icon,name,private=False):
+    if not getattr(self,'collection',None):
+      col = 'global'
+    else:
+      col = self.collection
+    key = Icon.create(icon=icon,name=name,collection=col,private=private)
+    icon.icon_key = key
+    self.icon = icon
 
-    #@ndb.transactional_tasklet
-    #def update_changed(tag):
-    #    tag_instance = yield Tag.get_or_create_async(tag)
-    #    if tag in added_tags:
-    #        yield tag_instance.link_async(self_key)
-    #    else:
-    #        yield tag_instance.unlink_async(self_key)
+  def remove_icon(self):
+    if getattr(self,'icon',None):
+      Icon.remove(self.icon.icon_key)
+      del self.icon
 
-    #ndb.Future.wait_all([
-    #    update_changed(tag) for tag in added_tags | deleted_tags
-    #])
-
-    ## Update for any successive puts on this model.
-    self._tm_icon = self.icon

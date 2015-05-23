@@ -1,0 +1,209 @@
+from google.appengine.ext import ndb
+
+from counter import CountableLazy
+from icon import IconStructure, Iconize
+
+"""
+An icon consists of two model classes:
+  IconStructure: Which helds all icon specific data but no additional information.
+  Icon: The Icon model contains an IconStructure as an icon and additional information
+        like a counter and collection.
+
+For each icon exists a toplevel icon which can have children grouped by collection.
+Once an icon is created it should not be changed anymore.
+If one of the childrens counter is updated the topevel icon's counter is updated
+as well.
+The highest toplevel has the default collection 'global'.
+"""
+
+
+class TagStructure(ndb.Model): # use the counter mixin
+  """Basic tag class
+  """
+  #tag_key = ndb.KeyProperty(required=False)
+  icon = ndb.StructuredProperty(IconStructure)
+  name = ndb.StringProperty(indexed=True,required=True)
+  color = ndb.StringProperty(indexed=True,required=True)
+
+class Tag(Iconize, CountableLazy, ndb.Model):
+  name = ndb.StringProperty(indexed=True,required=True)
+  color = ndb.StringProperty(indexed=True,required=True,default='blue')
+  #icon = ndb.StructuredProperty(IconStructure)
+  #tag = ndb.StructuredProperty(TagStructure)
+  private = ndb.BooleanProperty(required=True,default=False)
+  created = ndb.DateTimeProperty(auto_now_add=True)
+  modified = ndb.DateTimeProperty(auto_now=True)
+  # Preferred urlsafe keys
+  collection = ndb.StringProperty(required=True, indexed=True,
+                  default='global', validator=lambda p, v: v.lower())
+  # Key the the parent (or toplevel) entry. If empty it is already the toplevel,
+  # usually the collection 'global'
+  toplevel = ndb.KeyProperty()
+  replaced_by = ndb.KeyProperty() # if the icon should not be used anymore
+
+  def get_tag(self):
+    """ Returns a IconStructure.
+
+    Should be used instead of directly accessing the property 'icon'
+    """
+    if self.key is None:
+      raise UserWarning("Key not set yet, use first 'put()' before you use this method.")
+    #self.icon.icon_key = self.key
+    return TagStructure(name=self.name,icon=self.icon,color=self.color)
+
+#  @classmethod
+#  def create(cls,icon,name,collection='global',toplevel=None,private=False, auto=True):
+#    """ Creates and puts a new icon to the database.
+#    Returns Icon key"""
+#    new_icon = Icon(icon = icon,
+#        name=name,
+#        collection=collection,
+#        private=private)
+#    if toplevel:
+#      new_icon.toplevel = toplevel
+#
+#    key = new_icon._add_and_put(auto=auto)
+#    return key
+
+  @classmethod
+  def add(cls,key,collection=None, as_child=False):
+    """ Add a icon which already exists by key.
+
+    If no collection or the same belonging to the key is given the icon
+    counter is increased by one.
+
+    If the collection is different two things can happen:
+
+    1. If the key's collection is 'global' (no toplevel) or 'as_child' is true:
+       The key is assigned as toplevel.
+       ('as_child' means the icon is added with key as toplevel)
+
+    2. It is not a toplevel key:
+       The property 'toplevel' is assigned as key.
+
+    In both cases a toplevel is set. The next step is to look for a icon with
+    the same toplevel and collection, if one exists its counter is increased.
+    If none exists a new one is created.
+      """
+    pass
+  #  icon_db = key.get()
+  #  if icon_db.collection == collection or not collection:
+  #    icon_db.incr()
+  #    icon_db.put()
+  #    return key
+  #  else:
+  #    if collection == 'global':
+  #      return self.add(icon_db.toplevel,collection)
+  #    elif icon_db.collection == 'global' or as_child:
+  #      toplevel = key
+  #    else:
+  #      toplevel = icon_db.toplevel
+
+  #  ## Look for icons with same toplevel and collection
+  #  keys = Icon.get_by_toplevel(toplevel, collection=collection, keys_only=True, limit=1)
+  #  if keys:
+  #    #for key in keys:
+  #    key = keys[0]
+  #    return Icon.add(key,collection)
+  #  else:
+  #    return Icon.create(icon_db.icon,icon_db.name,collection=collection,toplevel=toplevel)
+
+  @classmethod
+  def remove(cls,key):
+    """Removes a icon by its key
+
+    Remove means its counter is decreased by one"""
+    tag_db = key.get()
+    tag_db.decr()
+    tag_db.put()
+
+
+  @classmethod
+  def qry(cls, toplevel=None, name=None, collection=None, private=False,
+      replaced_by=None, order_by_count=True, **kwargs):
+    """Query for the icon model"""
+    qry = cls.query(**kwargs)
+    if toplevel:
+      qry_tmp = qry
+      qry = qry.filter(cls.toplevel==toplevel)
+    if name:
+      qry_tmp = qry
+      qry = qry.filter(cls.name==name,)
+    if collection:
+      qry_tmp = qry
+      qry = qry.filter(cls.collection == collection)
+    if not private:
+      qry_tmp = qry
+      qry = qry_tmp.filter(cls.private==False)
+    if order_by_count:
+      qry_tmp = qry
+      qry = qry.order(-cls.cnt)
+    #else filter for private True and False
+
+    return qry
+
+#  @classmethod
+#  def get_by_toplevel(cls, toplevel=None, collection=None, private=False,
+#      keys_only=False, limit=100):
+#    """Returns icon dbs or keys defined by its toplevel and some addition parameters"""
+#    return cls.qry(toplevel=toplevel,collection=collection,private=private).\
+#        fetch(keys_only=keys_only, limit=limit)
+
+
+
+  def _add_and_put(self, auto=True):
+    """ Adds and puts an icon to the DB
+
+    If 'auto' is true it automatically creates a toplevel icon if none is given.
+    This only works for one level, if a higher hierarchy is required it needs to be
+    done manually.
+    """
+    if not getattr(self,'toplevel',None) and self.collection != 'global' and auto: #\
+      top = Tag(icon=self.icon,name=self.name)
+      top_key = top.put()
+      self.toplevel = top_key
+
+    self.incr()
+    self.put()
+    #self.get_icon()
+    return self.key
+
+
+
+class Taggable(ndb.Model): # use the counter mixin
+  """Adds an icon property
+
+  Icons are managed in the 'Icon' model, this mzixins
+  adds two methods to deal with icons:
+    'add_icon': if an icon already exists it can be added by its key
+    'create_icon': create a new icon
+
+  The two method 'put' the icons automatically, this means it is recommanded to
+  put the iconized model as well or remove the icon again if something went wrong.
+    """
+  tag = ndb.StructuredProperty(TagStructure)
+
+  def add_tag(self, key):
+    """Adds an icon by key, the key is either a toplevel key or an icon key."""
+    if not getattr(self,'collection',None):
+      col = 'global'
+    else:
+      col = self.collection
+    key = Tag.add(key,collection=col)
+    self.icon = key.get().get_tag()
+
+#  def create_icon(self,icon,name,private=False):
+#    if not getattr(self,'collection',None):
+#      col = 'global'
+#    else:
+#      col = self.collection
+#    key = Icon.create(icon=icon,name=name,collection=col,private=private)
+#    icon.icon_key = key
+#    self.icon = icon
+
+  def remove_tag(self):
+    if getattr(self,'tag',None):
+      #Icon.remove(self.tag.tag_key)
+## TODO add decr of tag counter
+      del self.tag
+

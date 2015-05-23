@@ -4,16 +4,17 @@ from counter import CountableLazy
 from icon import IconStructure, Iconize
 
 """
-An icon consists of two model classes:
-  IconStructure: Which helds all icon specific data but no additional information.
-  Icon: The Icon model contains an IconStructure as an icon and additional information
-        like a counter and collection.
+A tag consists of two model classes:
+  TagStructure: Which holds all tag specific data but no additional information.
+  Tag: The 'Tag' model contains additional information for a tag like a counter
+       and collection. A 'TagStructure' is return by 'get_tag()'.
 
-For each icon exists a toplevel icon which can have children grouped by collection.
-Once an icon is created it should not be changed anymore.
-If one of the childrens counter is updated the topevel icon's counter is updated
+For each tag exists a toplevel tag which can have children grouped by a collection.
+Once a tag is created it should not be changed anymore.
+If one of the children's counter is updated the topevel tag counter is updated
 as well.
 The highest toplevel has the default collection 'global'.
+A tag key look as follow : 'tag__{name}_{collection}'.
 """
 
 
@@ -26,101 +27,104 @@ class TagStructure(ndb.Model): # use the counter mixin
   color = ndb.StringProperty(indexed=True,required=True)
 
 class Tag(Iconize, CountableLazy, ndb.Model):
+  """Tag Model
+  The key should have the following from: tag__{name}_{collection}"""
   name = ndb.StringProperty(indexed=True,required=True)
   color = ndb.StringProperty(indexed=True,required=True,default='blue')
-  #icon = ndb.StructuredProperty(IconStructure)
-  #tag = ndb.StructuredProperty(TagStructure)
-  private = ndb.BooleanProperty(required=True,default=False)
+  approved = ndb.BooleanProperty(required=True,default=False)
   created = ndb.DateTimeProperty(auto_now_add=True)
   modified = ndb.DateTimeProperty(auto_now=True)
   # Preferred urlsafe keys
   collection = ndb.StringProperty(required=True, indexed=True,
                   default='global', validator=lambda p, v: v.lower())
-  # Key the the parent (or toplevel) entry. If empty it is already the toplevel,
+  # Key to the parent (or toplevel) entry. If empty it is already the toplevel,
   # usually the collection 'global'
   toplevel = ndb.KeyProperty()
-  replaced_by = ndb.KeyProperty() # if the icon should not be used anymore
+  #replaced_by = ndb.KeyProperty() # if the icon should not be used anymore
 
   def get_tag(self):
-    """ Returns a IconStructure.
+    """ Returns a TagStructure.
 
-    Should be used instead of directly accessing the property 'icon'
+    Should be used instead of directly accessing the properties for a tag.
+    This can be saved as a property be other models.
     """
-    if self.key is None:
-      raise UserWarning("Key not set yet, use first 'put()' before you use this method.")
+    #if self.key is None:
+      #raise UserWarning("Key not set yet, use first 'put()' before you use this method.")
     #self.icon.icon_key = self.key
-    return TagStructure(name=self.name,icon=self.icon,color=self.color)
+    return TagStructure(name=self.name,icon=getattr(self,'icon',None) \
+        ,color=self.color)
 
-#  @classmethod
-#  def create(cls,icon,name,collection='global',toplevel=None,private=False, auto=True):
-#    """ Creates and puts a new icon to the database.
-#    Returns Icon key"""
-#    new_icon = Icon(icon = icon,
-#        name=name,
-#        collection=collection,
-#        private=private)
-#    if toplevel:
-#      new_icon.toplevel = toplevel
-#
-#    key = new_icon._add_and_put(auto=auto)
-#    return key
+  @staticmethod
+  def tag_to_keyname(name,collection=None):
+    """Returns a key name (string)"""
+    col = collection or 'global'
+    return "tag__{}_{}".format(name.lower(), col)
+
+  @staticmethod
+  def tag_to_key(name, collection=None):
+    """Returns a key"""
+    return ndb.Key("Tag", Tag.tag_to_keyname(name,collection))
+
 
   @classmethod
-  def add(cls,key,collection=None, as_child=False):
-    """ Add a icon which already exists by key.
+  def add(cls,name,collection=None, toplevel_key=None, icon_key=None, \
+      icon_structure=None, force_new_icon=False, auto_incr=True):
+    """ Add a tag, if it not exists create one.
 
-    If no collection or the same belonging to the key is given the icon
-    counter is increased by one.
+    If an 'icon_strucuture' is given a new icon is created for the icon DB,
+    if an 'icon_key' is given this icon is used.
 
-    If the collection is different two things can happen:
-
-    1. If the key's collection is 'global' (no toplevel) or 'as_child' is true:
-       The key is assigned as toplevel.
-       ('as_child' means the icon is added with key as toplevel)
-
-    2. It is not a toplevel key:
-       The property 'toplevel' is assigned as key.
-
-    In both cases a toplevel is set. The next step is to look for a icon with
-    the same toplevel and collection, if one exists its counter is increased.
-    If none exists a new one is created.
+    An icon can only be added once, except 'force_new_icon' is 'True'
+    This method already 'put()'s the tag to the DB.
       """
-    pass
-  #  icon_db = key.get()
-  #  if icon_db.collection == collection or not collection:
-  #    icon_db.incr()
-  #    icon_db.put()
-  #    return key
-  #  else:
-  #    if collection == 'global':
-  #      return self.add(icon_db.toplevel,collection)
-  #    elif icon_db.collection == 'global' or as_child:
-  #      toplevel = key
-  #    else:
-  #      toplevel = icon_db.toplevel
-
-  #  ## Look for icons with same toplevel and collection
-  #  keys = Icon.get_by_toplevel(toplevel, collection=collection, keys_only=True, limit=1)
-  #  if keys:
-  #    #for key in keys:
-  #    key = keys[0]
-  #    return Icon.add(key,collection)
-  #  else:
-  #    return Icon.create(icon_db.icon,icon_db.name,collection=collection,toplevel=toplevel)
-
-  @classmethod
-  def remove(cls,key):
-    """Removes a icon by its key
-
-    Remove means its counter is decreased by one"""
-    tag_db = key.get()
-    tag_db.decr()
-    tag_db.put()
-
+    col = collection or 'global'
+    #key = ndb.Key('Tag','tag_{}_{}'.format(name,col))
+    #print key
+    tag_db = Tag.get_or_insert(Tag.tag_to_keyname(name,col),\
+        name=name.lower(),collection=col)
+    if col != 'global' and not toplevel_key:
+      tag_db.toplevel = Tag.tag_to_key(name,'global')
+      top_db = Tag.get_or_insert(Tag.tag_to_keyname(name,'global'),\
+        name=name.lower(),collection='global')
+      top_db.put()
+    elif toplevel_key:
+      tag_db.toplevel = toplevel_key
+    if auto_incr:
+      tag_db.incr()
+    # check if icon already exists
+    if not tag_db.get_tag().icon or force_new_icon:
+      if icon_key:
+        tag_db.add_icon(icon_key)
+      elif icon_structure:
+        tag_db.create_icon(icon_structure,name)
+    return tag_db.put()
 
   @classmethod
-  def qry(cls, toplevel=None, name=None, collection=None, private=False,
-      replaced_by=None, order_by_count=True, **kwargs):
+  def remove(cls,name,collection=None):
+    """Removes a tag by its name"""
+# TODO Should it also work with a key??
+    col = collection or 'global'
+    tag_db = Tag.tag_to_key(name,col).get()
+    if tag_db:
+      tag_db.decr()
+      if tag_db.get_tag().icon:
+        tag_db.remove_icon()
+      return tag_db.put()
+    else:
+      return False
+
+  @classmethod
+  def approve(cls,name,collection=None,approved=True):
+    """The method approves a tag, by default only global tags need improvement"""
+    col = collection or 'global'
+    tag_db = Tag.tag_to_key(name,col).get()
+    tag_db.approved=approved
+    return tag_db.put()
+
+
+  @classmethod
+  def qry(cls, toplevel=None, name=None, collection=None, only_approved=False,
+      order_by_count=True, **kwargs):
     """Query for the icon model"""
     qry = cls.query(**kwargs)
     if toplevel:
@@ -132,59 +136,73 @@ class Tag(Iconize, CountableLazy, ndb.Model):
     if collection:
       qry_tmp = qry
       qry = qry.filter(cls.collection == collection)
-    if not private:
+    if only_approved:
       qry_tmp = qry
-      qry = qry_tmp.filter(cls.private==False)
+      qry = qry_tmp.filter(cls.approved==True)
     if order_by_count:
       qry_tmp = qry
       qry = qry.order(-cls.cnt)
     #else filter for private True and False
-
     return qry
 
-#  @classmethod
-#  def get_by_toplevel(cls, toplevel=None, collection=None, private=False,
-#      keys_only=False, limit=100):
-#    """Returns icon dbs or keys defined by its toplevel and some addition parameters"""
-#    return cls.qry(toplevel=toplevel,collection=collection,private=private).\
-#        fetch(keys_only=keys_only, limit=limit)
+
+class TagRelation(CountableLazy, ndb.Model): # use the counter mixin
+  """Tag relation model
+
+  key: tagrel__{tag_name}_{relate_to}_{collection}
+  """
+  tag_name = ndb.StringProperty(indexed=True,required=True)
+  related_to = ndb.StringProperty(indexed=True,required=True)
+  collection = ndb.StringProperty(indexed=True,required=True,default='global')
+
+  @staticmethod
+  def to_keyname(tag_name,related_to,collection=None):
+    """Returns a key name (string)"""
+    col = collection or 'global'
+    return "tagrel__{}_{}_{}".format(tag_name.lower(),related_to.lower(), col)
+
+  @staticmethod
+  def to_key(tag_name, related_to, collection=None):
+    """Returns a key"""
+    return ndb.Key("TagRelation", cls.to_keyname(tag_name,related_to,collection))
+
+
+  @classmethod
+  def generate_all_keys(tag_names, collection=None):
+    keys = []
+    for tag_name in tag_names:
+      keys.append(cls.generate_related_keys(tag_name,tag_names,collection))
+    return keys
+
+  @classmethod
+  def generate_related_keys(cls,tag_name,related_tos,collection=None):
+    keys = []
+    for related_to in related_tos:
+      if related_to != tag_name:
+        keys.append(cls.to_key(tag_name,related_to,collection))
+
+    return keys
 
 
 
-  def _add_and_put(self, auto=True):
-    """ Adds and puts an icon to the DB
-
-    If 'auto' is true it automatically creates a toplevel icon if none is given.
-    This only works for one level, if a higher hierarchy is required it needs to be
-    done manually.
-    """
-    if not getattr(self,'toplevel',None) and self.collection != 'global' and auto: #\
-      top = Tag(icon=self.icon,name=self.name)
-      top_key = top.put()
-      self.toplevel = top_key
-
-    self.incr()
-    self.put()
-    #self.get_icon()
-    return self.key
 
 
 
 class Taggable(ndb.Model): # use the counter mixin
-  """Adds an icon property
+  """Adds a tags property
 
-  Icons are managed in the 'Icon' model, this mzixins
-  adds two methods to deal with icons:
-    'add_icon': if an icon already exists it can be added by its key
-    'create_icon': create a new icon
+  Tags are managed in the 'Tag' model, this mixin
+  adds two methods to deal with tags:
+    'add_tags': if an tag already exists it can be added by its key
+    'create_tags': create a new tag
 
-  The two method 'put' the icons automatically, this means it is recommanded to
-  put the iconized model as well or remove the icon again if something went wrong.
+  The two method 'put' the tag automatically, this means it is recommended to
+  put the taggable model as well or remove the tags again if something went wrong.
     """
   tag = ndb.StructuredProperty(TagStructure)
 
-  def add_tag(self, key):
-    """Adds an icon by key, the key is either a toplevel key or an icon key."""
+  def add_tags(self, key):
+    """Adds a tags by name. """
     if not getattr(self,'collection',None):
       col = 'global'
     else:
@@ -201,7 +219,7 @@ class Taggable(ndb.Model): # use the counter mixin
 #    icon.icon_key = key
 #    self.icon = icon
 
-  def remove_tag(self):
+  def remove_tags(self):
     if getattr(self,'tag',None):
       #Icon.remove(self.tag.tag_key)
 ## TODO add decr of tag counter

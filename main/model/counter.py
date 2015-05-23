@@ -35,8 +35,8 @@ class CountableLazy(object):
     if getattr(self,'toplevel',None):
       if getattr(self,'_orig_collection',None):
         if self._orig_collection != self.collection:
-          raise UserWarning("It is not possible to have different collision values \
-          The 'get' collision value was: {col1}, but now it is {col2}". \
+          raise UserWarning("It is not possible to have different collection values \
+          The 'get' collection value was: {col1}, but now it is {col2}". \
             format( col1=self._orig_collection,col2=self.collection))
 
       top = self.toplevel.get()

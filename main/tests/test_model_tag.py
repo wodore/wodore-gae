@@ -10,6 +10,7 @@ from google.appengine.ext import ndb#, testbed
 
 
 from tag import Taggable, IconStructure, Tag
+from icon import Icon
 #from counter import CountableLazy
 
 
@@ -25,13 +26,90 @@ class TestTag(unittest.TestCase):
     #self.i2s_type = IconStructure(filetype='png')
     #self.i3s_data = IconStructure(data="BLOB")
 
-  def test_init_icon(self):
+  def test_init_tag(self):
     tag1 = Tag(name='tag1')
     tag1.put()
     assert tag1 is not None
     self.assertEqual(tag1.name, 'tag1')
-    #self.assertEqual(i1.icon.filetype, 'svg')
-    #self.assertEqual(i1.collection, 'global')
+
+
+  def test_add_tag(self):
+    key1 = Tag.add('one')
+    tag1_db = key1.get()
+    self.assertEqual(tag1_db.count, 1)
+    key1a = Tag.add('one','child1')
+    key1a = Tag.add('one','child1')
+    key1b = Tag.add('one','child2')
+    key1bA = Tag.add('one','child2A',key1b)
+    tag1_db = key1.get()
+    tag1a_db = key1a.get()
+    tag1b_db = key1b.get()
+    tag1bA_db = key1bA.get()
+    self.assertEqual(tag1_db.count, 5)
+    self.assertEqual(tag1a_db.count, 2)
+    self.assertEqual(tag1b_db.count, 2)
+    self.assertEqual(tag1b_db.toplevel, key1)
+    self.assertEqual(tag1bA_db.toplevel, key1b)
+
+## Add a child without a parent
+    #print tag1_db.get_tag()
+    key2a = Tag.add('two','child1')
+    tag2a_db = key2a.get()
+    self.assertEqual(tag2a_db.count, 1)
+    key2a = Tag.add('two','child2')
+    self.assertEqual(Tag.tag_to_key('two').get().count, 2)
+
+  def test_add_tag_with_icon_structure(self):
+    icon1 = IconStructure(data='i')
+    key1 = Tag.add('one', icon_structure=icon1)
+    tag1_db = key1.get()
+    self.assertEqual(tag1_db.icon, icon1)
+
+    icon2 = IconStructure(data='o')
+    key1 = Tag.add('one', icon_structure=icon2)
+    tag1_db = key1.get()
+    self.assertEqual(tag1_db.icon, icon1)
+
+    key1 = Tag.add('one', icon_structure=icon2, force_new_icon=True, auto_incr=False)
+    tag1_db = key1.get()
+    self.assertEqual(tag1_db.icon, icon2)
+    self.assertEqual(tag1_db.count, 2)
+
+  def test_add_tag_with_icon_key(self):
+    icon1 = IconStructure(data='i')
+    icon1_db = Icon(icon=icon1,name='one')
+    icon1_key = icon1_db.put()
+    key1 = Tag.add('one', icon_key=icon1_key)
+    tag1_db = key1.get()
+    self.assertEqual(tag1_db.icon, icon1)
+
+
+  def test_remove_tag_with_icon(self):
+    icon1 = IconStructure(data='i')
+    icon1_db = Icon(icon=icon1,name='one')
+    icon1_key = icon1_db.put()
+    key1 = Tag.add('one',icon_key=icon1_key)
+    self.assertEqual(icon1_key.get().count, 1)
+    tag1_db = key1.get()
+    self.assertEqual(tag1_db.count, 1)
+    Tag.remove('one')
+    tag1_db = key1.get()
+    self.assertEqual(tag1_db.count, 0)
+    self.assertEqual(icon1_key.get().count, 0)
+
+
+  def test_approve_tag(self):
+    key1 = Tag.add('one')
+    tag1_db = key1.get()
+    self.assertEqual(tag1_db.approved, False)
+    Tag.approve('one')
+    tag1_db = key1.get()
+    self.assertEqual(tag1_db.approved, True)
+
+
+
+
+    #tag1_db.add_icon(icon=IconStructure(data='i'))
 #
 #  def test_init_with_type_data_and_collection(self):
 #    i2 = Icon(icon=self.i2s_type,name='i2s_type')

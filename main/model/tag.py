@@ -154,6 +154,9 @@ class TagRelation(CountableLazy, ndb.Model): # use the counter mixin
   tag_name = ndb.StringProperty(indexed=True,required=True)
   related_to = ndb.StringProperty(indexed=True,required=True)
   collection = ndb.StringProperty(indexed=True,required=True,default='global')
+  toplevel = ndb.KeyProperty()
+  created = ndb.DateTimeProperty(auto_now_add=True)
+  modified = ndb.DateTimeProperty(auto_now=True)
 
   @staticmethod
   def to_keyname(tag_name,related_to,collection=None):
@@ -162,28 +165,86 @@ class TagRelation(CountableLazy, ndb.Model): # use the counter mixin
     return "tagrel__{}_{}_{}".format(tag_name.lower(),related_to.lower(), col)
 
   @staticmethod
-  def to_key(tag_name, related_to, collection=None):
+  def from_keyname(keyname):
+    """Returns tag_name, related_to, collection """
+    names = keyname.split('_')
+    tag_name = names[2]
+    related_to = names[3]
+    collection = names[4]
+    return tag_name, related_to, collection
+
+  @classmethod
+  def from_key(cls,key):
+    """Returns tag_name, related_to, collection """
+    return cls.from_keyname(key.id())
+
+
+  @classmethod
+  def to_key(cls, tag_name, related_to, collection=None):
     """Returns a key"""
     return ndb.Key("TagRelation", cls.to_keyname(tag_name,related_to,collection))
 
 
   @classmethod
-  def generate_all_keys(tag_names, collection=None):
+  def generate_all_keys(cls, tag_names, collection=None):
+    """Generates all key combination depending on a tag name list"""
     keys = []
     for tag_name in tag_names:
-      keys.append(cls.generate_related_keys(tag_name,tag_names,collection))
+      keys.extend(cls.generate_related_keys(tag_name,tag_names,collection))
     return keys
 
   @classmethod
   def generate_related_keys(cls,tag_name,related_tos,collection=None):
+    """Generates all keys from one tag name to a list of related tags"""
     keys = []
     for related_to in related_tos:
       if related_to != tag_name:
         keys.append(cls.to_key(tag_name,related_to,collection))
+    return keys
 
+  @classmethod
+  def add_by_keys(cls,tag_rel_keys,_incr=1):
+    """Add relation by keys"""
+    keys = tag_rel_keys
+    dbs = ndb.get_multi(keys)
+    dbs_new = []
+    keys_del = []
+    for db, key in zip(dbs, keys):
+      if not db:
+        tag_name, related_to, collection = cls.from_key(key)
+        db = cls.get_or_insert(key.id(),tag_name=tag_name,related_to=related_to,\
+            collection=collection)
+        if collection != 'global':
+          top_key = cls.to_key(tag_name,related_to,'global')
+          db.toplevel = top_key
+          cls.get_or_insert(top_key.id(),tag_name=tag_name,related_to=related_to,\
+            collection='global')
+      db.incr(_incr)
+      if db.count <= 0:
+        keys_del.append(db.key)
+        db_top = db.toplevel.get()
+        if db_top.count <= 1: # its 0 after put()
+          keys_del.append(db.toplevel)
+      else:
+        dbs_new.append(db)
+    ndb.delete_multi(keys_del) #TODO async delete
+    return ndb.put_multi(dbs_new)
+
+  @classmethod
+  def add(cls, tag_names, collection=None):
+    """Add relations by a tag list"""
+    keys = TagRelation.generate_all_keys(tag_names,collection)
+    return cls.add_by_keys(keys)
+
+  @classmethod
+  def remove(cls, tag_names, collection=None):
+    """Remove relations by a tag list"""
+    keys = TagRelation.generate_all_keys(tag_names,collection)
+    cls.add_by_keys(keys,_incr=-1)
     return keys
 
 
+  #TODO Queries
 
 
 

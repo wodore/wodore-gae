@@ -65,10 +65,16 @@ class Tag(Iconize, CountableLazy, ndb.Model):
     """Returns a key"""
     return ndb.Key("Tag", Tag.tag_to_keyname(name,collection))
 
+  @staticmethod
+  def tag_structures_to_tagnames(tag_structures):
+    tagnames = []
+    for tag in tag_structures:
+      tagnames.append(tag.name)
+    return tagnames
 
   @classmethod
   def add(cls,name,collection=None, toplevel_key=None, icon_key=None, \
-      icon_structure=None, force_new_icon=False, auto_incr=True):
+      icon_structure=None, color=None, force_new_icon=False, auto_incr=True):
     """ Add a tag, if it not exists create one.
 
     If an 'icon_strucuture' is given a new icon is created for the icon DB,
@@ -97,6 +103,8 @@ class Tag(Iconize, CountableLazy, ndb.Model):
         tag_db.add_icon(icon_key)
       elif icon_structure:
         tag_db.create_icon(icon_structure,name)
+    if color:
+      tag_db.color = color
     return tag_db.put()
 
   @classmethod
@@ -145,9 +153,30 @@ class Tag(Iconize, CountableLazy, ndb.Model):
     #else filter for private True and False
     return qry
 
+  @staticmethod
+  def print_list(dbs):
+    print "\n+-------------------+-------------------+-------------------"\
+        +"+-------------------+-----------+-------------------+"\
+        +"---------------------------------------+"
+    print "| {:<18}| {:<18}| {:<18}| {:<18}| {:<10}| {:<18}| {:<38}|".\
+        format("name", "collection", "icon", "color", \
+        "count", "approved", "toplevel")
+    print "+-------------------+-------------------+-------------------"\
+        +"+-------------------+-----------+-------------------+---------------------------------------+"
+    for db in dbs:
+      print "| {:<18}| {:<18}| {:<18}| {:<18}| {:<10}| {:<18}| {:<38}|".\
+          format(db.name, db.collection, \
+          getattr(db.icon,"icon_key",""), db.color, db.count, db.approved, db.toplevel or "")
+    print "+-------------------+-------------------+-------------------"\
+        +"+-------------------+-----------+-------------------+"\
+        +"---------------------------------------+"
+    print
+    print
 
 class TagRelation(CountableLazy, ndb.Model): # use the counter mixin
   """Tag relation model
+  Saves all relation between tags with a counter.
+  Can be used for tag suggestions.
 
   key: tagrel__{tag_name}_{relate_to}_{collection}
   """
@@ -204,7 +233,9 @@ class TagRelation(CountableLazy, ndb.Model): # use the counter mixin
 
   @classmethod
   def add_by_keys(cls,tag_rel_keys,_incr=1):
-    """Add relation by keys"""
+    """Add relation by keys
+
+    Toplevels are added automatically."""
     keys = tag_rel_keys
     dbs = ndb.get_multi(keys)
     dbs_new = []
@@ -222,9 +253,10 @@ class TagRelation(CountableLazy, ndb.Model): # use the counter mixin
       db.incr(_incr)
       if db.count <= 0:
         keys_del.append(db.key)
-        db_top = db.toplevel.get()
-        if db_top.count <= 1: # its 0 after put()
-          keys_del.append(db.toplevel)
+        if getattr(db,"toplevel",None):
+          db_top = db.toplevel.get()
+          if db_top.count <= 1: # its 0 after put()
+            keys_del.append(db.toplevel)
       else:
         dbs_new.append(db)
     ndb.delete_multi(keys_del) #TODO async delete
@@ -272,6 +304,7 @@ class TagRelation(CountableLazy, ndb.Model): # use the counter mixin
     #else filter for private True and False
     return qry
 
+
   @staticmethod
   def print_list(dbs):
     print "\n+-------------------+-------------------+-------------------+-----------+"
@@ -299,29 +332,76 @@ class Taggable(ndb.Model): # use the counter mixin
   The two method 'put' the tag automatically, this means it is recommended to
   put the taggable model as well or remove the tags again if something went wrong.
     """
-  tag = ndb.StructuredProperty(TagStructure)
+  tags = ndb.StructuredProperty(TagStructure, repeated=True)
+  _MAX_TAGS = 20
+  #_new_tags = []
 
-  def add_tags(self, key):
-    """Adds a tags by name. """
+  def add_tags(self, tags):
+    """Adds a tags as TagStructure. """
+# TODO if icon changes it could give double entries, not good!
+    new_tags = []
     if not getattr(self,'collection',None):
       col = 'global'
     else:
       col = self.collection
-    key = Tag.add(key,collection=col)
-    self.icon = key.get().get_tag()
+    if getattr(self,'tags',None):
+      #print "Check if tags already exist"
+      for tag in tags:
+        if tag not in self.tags:
+          new_tags.append(tag)
+      #new_tags = self.tags - tags
+    else:
+      new_tags = tags
+    #print new_tags
+    if len(self.tags) + len(new_tags) > self._MAX_TAGS:
+      raise UserWarning('Too many tags, maximum {} tags are allowed, {} are used.'.\
+          format(self._MAX_TAGS,len(self.tags) + len(new_tags)))
+    for tag in new_tags:
+      Tag.add(tag.name, icon_structure=tag.icon, color=tag.color, collection=col)
 
-#  def create_icon(self,icon,name,private=False):
-#    if not getattr(self,'collection',None):
-#      col = 'global'
-#    else:
-#      col = self.collection
-#    key = Icon.create(icon=icon,name=name,collection=col,private=private)
-#    icon.icon_key = key
-#    self.icon = icon
+    ## Add relations
+    old_tagnames = Tag.tag_structures_to_tagnames(self.tags)
+    self.tags.extend(new_tags)
+    new_tagnames = Tag.tag_structures_to_tagnames(self.tags)
+    TagRelation.remove(old_tagnames,col)
+    TagRelation.add(new_tagnames,col)
 
-  def remove_tags(self):
-    if getattr(self,'tag',None):
-      #Icon.remove(self.tag.tag_key)
-## TODO add decr of tag counter
-      del self.tag
+    return self.tags
+
+  def remove_tags(self, tags):
+    """Removes tags by TagStructure. """
+# TODO if icon changes it could give wrong entries, not good!
+
+    rm_tags = []
+    new_tags = []
+    if not getattr(self,'collection',None):
+      col = 'global'
+    else:
+      col = self.collection
+    if not getattr(self,'tags',None):
+      #print "Check if tags already exist"
+      return []
+    else:
+      for tag in tags:
+        if tag in self.tags:
+          rm_tags.append(tag)
+    #print "Tags to remove"
+    #print rm_tags
+    for tag in rm_tags:
+      Tag.remove(tag.name, collection=col)
+
+    ## Del relations
+    old_tagnames = Tag.tag_structures_to_tagnames(self.tags)
+    # remove tags
+    still_tags = []
+    for tag in self.tags:
+      if tag not in rm_tags:
+        still_tags.append(tag)
+    self.tags = still_tags
+    new_tagnames = Tag.tag_structures_to_tagnames(self.tags)
+    TagRelation.remove(old_tagnames,col)
+    TagRelation.add(new_tagnames,col)
+
+
+
 

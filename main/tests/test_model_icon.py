@@ -311,7 +311,7 @@ class TestIcon(unittest.TestCase):
 
 
 class TestIconModel(Iconize, ndb.Model):
-  """This is a test class for trying out tags
+  """This is a test class for trying out icons
   """
   name = ndb.StringProperty()
   collection = ndb.StringProperty()

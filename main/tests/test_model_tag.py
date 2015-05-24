@@ -224,6 +224,147 @@ class TestTagRelation(unittest.TestCase):
     self.assertEqual(dbs[0].tag_name,'a')
     self.assertEqual(dbs[-1].tag_name,'two')
 
+class TestTagModel(Taggable, ndb.Model):
+  """This is a test class for trying out tags
+  """
+  name = ndb.StringProperty()
+  collection = ndb.StringProperty()
+
+
+class TestTaggable(unittest.TestCase):
+  # enable the datastore stub
+  nosegae_datastore_v3 = True
+  nosegae_memcache = True
+
+  def setUp(self):
+    self.icon1 = IconStructure(data='i1')
+    self.icon2 = IconStructure(data='i2')
+    self.icon3 = IconStructure(data='i3')
+    self.tag1 = TagStructure(name='one', icon=self.icon1, color='red')
+    self.tag2 = TagStructure(name='Two', icon=self.icon2, color='green')
+    self.tag3 = TagStructure(name='Three', icon=self.icon3, color='blue')
+    self.tag4 = TagStructure(name='four')
+    self.tags1 = [self.tag1,self.tag2,self.tag3, self.tag4]
+
+  def test_init_taggable(self):
+    demo1 = TestTagModel(name='demo1')
+    demo1.put()
+    assert demo1 is not None
+    self.assertEqual(demo1.name, 'demo1')
+
+  def test_add_tag(self):
+    demo1 = TestTagModel(name='demo1')
+    demo1.add_tags([self.tag1])
+    demo1.put()
+    # show tags and relations
+    tag_dbs = Tag.qry().fetch()
+    self.assertEqual(len(tag_dbs), 1)
+    #Tag.print_list(tag_dbs)
+    rel_dbs = TagRelation.qry().fetch()
+    self.assertEqual(len(rel_dbs), 0)
+    #TagRelation.print_list(rel_dbs)
+
+    demo1.add_tags([self.tag2, self.tag3])
+    # show tags
+    tag_dbs = Tag.qry().fetch()
+    self.assertEqual(len(tag_dbs), 3)
+    #Tag.print_list(tag_dbs)
+    rel_dbs = TagRelation.qry().fetch()
+    self.assertEqual(len(rel_dbs), 6)
+    #TagRelation.print_list(rel_dbs)
+
+    demo1.add_tags(self.tags1)
+    # show tags
+    tag_dbs = Tag.qry().fetch()
+    #Tag.print_list(tag_dbs)
+    self.assertEqual(len(tag_dbs), 4)
+    rel_dbs = TagRelation.qry().fetch()
+    self.assertEqual(len(rel_dbs), 4*3)
+    #TagRelation.print_list(rel_dbs)
+
+  def test_add_tag_wtih_collection(self):
+    demo1 = TestTagModel(name='demo1')
+    demo1.add_tags([self.tag1])
+    demo1.put()
+    demo1a = TestTagModel(name='demo1a',collection='demo1a')
+    demo1a.add_tags([self.tag1])
+    demo1a.put()
+    # show tags and relations
+    tag_dbs = Tag.qry().fetch()
+    #Tag.print_list(tag_dbs)
+    self.assertEqual(len(tag_dbs), 2)
+    rel_dbs = TagRelation.qry().fetch()
+    #TagRelation.print_list(rel_dbs)
+    self.assertEqual(len(rel_dbs), 0)
+
+    demo1a.add_tags([self.tag2, self.tag3])
+    # show tags
+    tag_dbs = Tag.qry().fetch()
+    self.assertEqual(len(tag_dbs), 6)
+    #Tag.print_list(tag_dbs)
+    rel_dbs = TagRelation.qry().fetch()
+    self.assertEqual(len(rel_dbs), 6*2)
+    #TagRelation.print_list(rel_dbs)
+
+  def test_add_to_much_tags(self):
+    demo1 = TestTagModel(name='demo1')
+    # create a long list of tags
+    tags = []
+    for i in range (0,50):
+      tags.append(TagStructure(name=str(i)))
+    with self.assertRaises(UserWarning):
+      demo1.add_tags(tags)
+    demo1.put()
+
+  def test_remove_tags(self):
+    demo1 = TestTagModel(name='demo1')
+    demo1.add_tags(self.tags1)
+    demo1.put()
+    # show tags and relations
+    tag_dbs = Tag.qry().fetch()
+    #Tag.print_list(tag_dbs)
+    rel_dbs = TagRelation.qry().fetch()
+    #TagRelation.print_list(rel_dbs)
+
+    demo1.remove_tags([self.tag1,self.tag2])
+    demo1.put()
+    # show tags and relations
+    tag_dbs = Tag.qry().fetch()
+    self.assertEqual(tag_dbs[0].count,1)
+    self.assertEqual(tag_dbs[-1].count,0)
+    #Tag.print_list(tag_dbs)
+    rel_dbs = TagRelation.qry().fetch()
+    self.assertEqual(len(rel_dbs), 2)
+    #TagRelation.print_list(rel_dbs)
+
+  def test_remove_tags_with_collection(self):
+    demo1 = TestTagModel(name='demo1')
+    demo1.add_tags(self.tags1)
+    demo1.put()
+    demo1a = TestTagModel(name='demo1a',collection='demo1a')
+    demo1a.add_tags(self.tags1)
+    demo1a.put()
+    # show tags and relations
+    tag_dbs = Tag.qry().fetch()
+    #Tag.print_list(tag_dbs)
+    rel_dbs = TagRelation.qry().fetch()
+    #TagRelation.print_list(rel_dbs)
+
+    demo1a.remove_tags([self.tag1,self.tag2])
+    demo1a.put()
+    # show tags and relations
+    tag_dbs = Tag.qry().fetch()
+    #Tag.print_list(tag_dbs)
+    self.assertEqual(tag_dbs[0].count,2)
+    self.assertEqual(tag_dbs[-1].count,0)
+    rel_dbs = TagRelation.qry().fetch()
+    #TagRelation.print_list(rel_dbs)
+    self.assertEqual(len(rel_dbs), 3*4+2)
+
+
+
+
+
 
 
 

@@ -4,10 +4,11 @@ from counter import CountableLazy
 from icon import IconStructure, Iconize
 
 """
-A tag consists of two model classes:
+A tag consists of three model classes:
   TagStructure: Which holds all tag specific data but no additional information.
   Tag: The 'Tag' model contains additional information for a tag like a counter
        and collection. A 'TagStructure' is return by 'get_tag()'.
+  TagRelation: Which saves relations between tags.
 
 For each tag exists a toplevel tag which can have children grouped by a collection.
 Once a tag is created it should not be changed anymore.
@@ -453,8 +454,4 @@ class Taggable(ndb.Model): # use the counter mixin
 
     self.tags = tags
     return self.tags
-
-
-
-
 

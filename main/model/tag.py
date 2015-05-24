@@ -29,14 +29,14 @@ class TagStructure(ndb.Model): # use the counter mixin
 class Tag(Iconize, CountableLazy, ndb.Model):
   """Tag Model
   The key should have the following from: tag__{name}_{collection}"""
-  name = ndb.StringProperty(indexed=True,required=True)
+  name = ndb.StringProperty(indexed=True,required=True, validator=lambda p, v: v.lower())
   color = ndb.StringProperty(indexed=True,required=True,default='blue')
   approved = ndb.BooleanProperty(required=True,default=False)
   created = ndb.DateTimeProperty(auto_now_add=True)
   modified = ndb.DateTimeProperty(auto_now=True)
   # Preferred urlsafe keys
   collection = ndb.StringProperty(required=True, indexed=True,
-                  default='global', validator=lambda p, v: v.lower())
+                  default='global')#, validator=lambda p, v: v.lower())
   # Key to the parent (or toplevel) entry. If empty it is already the toplevel,
   # usually the collection 'global'
   toplevel = ndb.KeyProperty()
@@ -132,9 +132,9 @@ class Tag(Iconize, CountableLazy, ndb.Model):
 
   @classmethod
   def qry(cls, toplevel=None, name=None, collection=None, only_approved=False,
-      order_by_count=True, **kwargs):
+      order_by_count=True, count_greater=0, **kwargs):
     """Query for the icon model"""
-    qry = cls.query(**kwargs)
+    qry = cls.query(cls.cnt > count_greater, **kwargs)
     if toplevel:
       qry_tmp = qry
       qry = qry.filter(cls.toplevel==toplevel)
@@ -232,7 +232,7 @@ class TagRelation(CountableLazy, ndb.Model): # use the counter mixin
     return keys
 
   @classmethod
-  def add_by_keys(cls,tag_rel_keys,_incr=1):
+  def add_by_keys(cls,tag_rel_keys,_incr_step=1):
     """Add relation by keys
 
     Toplevels are added automatically."""
@@ -244,13 +244,15 @@ class TagRelation(CountableLazy, ndb.Model): # use the counter mixin
       if not db:
         tag_name, related_to, collection = cls.from_key(key)
         db = cls.get_or_insert(key.id(),tag_name=tag_name,related_to=related_to,\
-            collection=collection)
+            collection=collection,cnt=0)
         if collection != 'global':
           top_key = cls.to_key(tag_name,related_to,'global')
           db.toplevel = top_key
           cls.get_or_insert(top_key.id(),tag_name=tag_name,related_to=related_to,\
-            collection='global')
-      db.incr(_incr)
+            collection='global',cnt=0)
+      db.incr(_incr_step)
+
+
       if db.count <= 0:
         keys_del.append(db.key)
         if getattr(db,"toplevel",None):
@@ -268,6 +270,8 @@ class TagRelation(CountableLazy, ndb.Model): # use the counter mixin
     if not tag_names:
       return []
     keys = TagRelation.generate_all_keys(tag_names,collection)
+    #print "Keys to add for relation"
+    #print keys
     return cls.add_by_keys(keys)
 
   @classmethod
@@ -276,7 +280,7 @@ class TagRelation(CountableLazy, ndb.Model): # use the counter mixin
     if not tag_names:
       return []
     keys = TagRelation.generate_all_keys(tag_names,collection)
-    cls.add_by_keys(keys,_incr=-1)
+    cls.add_by_keys(keys,_incr_step=-1)
     return keys
 
 
@@ -307,14 +311,14 @@ class TagRelation(CountableLazy, ndb.Model): # use the counter mixin
 
   @staticmethod
   def print_list(dbs):
-    print "\n+-------------------+-------------------+-------------------+-----------+"
-    print "| {:<18}| {:<18}| {:<18}| {:<10}|".\
-        format("tag", "related to", "collection", "count")
-    print "+-------------------+-------------------+-------------------+-----------+"
+    print "\n+-------------------+-------------------+-------------------+-----------+---"
+    print "| {:<18}| {:<18}| {:<18}| {:<10}| {:<48}".\
+        format("tag", "related to", "collection", "count", "toplevel")
+    print "+-------------------+-------------------+-------------------+-----------+---"
     for db in dbs:
-      print "| {:<18}| {:<18}| {:<18}| {:<10}|".\
-          format(db.tag_name, db.related_to, db.collection, db.count)
-    print "+-------------------+-------------------+-------------------+-----------+"
+      print "| {:<18}| {:<18}| {:<18}| {:<10}| {:<48}".\
+          format(db.tag_name, db.related_to, db.collection, db.count, db.toplevel or "")
+    print "+-------------------+-------------------+-------------------+-----------+---"
     print
     print
 
@@ -332,12 +336,17 @@ class Taggable(ndb.Model): # use the counter mixin
   The two method 'put' the tag automatically, this means it is recommended to
   put the taggable model as well or remove the tags again if something went wrong.
     """
-  tags = ndb.StructuredProperty(TagStructure, repeated=True)
+  #tags = ndb.StringProperty(TagStructure, repeated=True)
+  tags = ndb.StringProperty(indexed=True, repeated=True,
+      validator=lambda p, v: v.lower())
   _MAX_TAGS = 20
   #_new_tags = []
 
   def add_tags(self, tags):
-    """Adds a tags as TagStructure. """
+    """Adds a tags as strings.
+
+    Color and icon are saved in the 'Tag' model.
+    All tag names are change to lower letters and double entries are deleted."""
 # TODO if icon changes it could give double entries, not good!
     new_tags = []
     if not getattr(self,'collection',None):
@@ -357,20 +366,26 @@ class Taggable(ndb.Model): # use the counter mixin
       raise UserWarning('Too many tags, maximum {} tags are allowed, {} are used.'.\
           format(self._MAX_TAGS,len(self.tags) + len(new_tags)))
     for tag in new_tags:
-      Tag.add(tag.name, icon_structure=tag.icon, color=tag.color, collection=col)
+      #Tag.add(tag.name, icon_structure=tag.icon, color=tag.color, collection=col)
+      Tag.add(tag, collection=col)
 
     ## Add relations
-    old_tagnames = Tag.tag_structures_to_tagnames(self.tags)
+    #old_tagnames = Tag.tag_structures_to_tagnames(self.tags)
+    old_tagnames = self.tags[:]
     self.tags.extend(new_tags)
-    new_tagnames = Tag.tag_structures_to_tagnames(self.tags)
+    #new_tagnames = Tag.tag_structures_to_tagnames(self.tags)
+    new_tagnames = self.tags[:]
+    #print "Add new relation names"
+    #print new_tagnames
     TagRelation.remove(old_tagnames,col)
     TagRelation.add(new_tagnames,col)
 
     return self.tags
 
   def remove_tags(self, tags):
-    """Removes tags by TagStructure. """
-# TODO if icon changes it could give wrong entries, not good!
+    """Removes tags as strings. """
+# TODO if icon is different it could give wrong entries, not good!
+# only compare names!
 
     rm_tags = []
     new_tags = []
@@ -388,19 +403,57 @@ class Taggable(ndb.Model): # use the counter mixin
     #print "Tags to remove"
     #print rm_tags
     for tag in rm_tags:
-      Tag.remove(tag.name, collection=col)
+      #Tag.remove(tag.name, collection=col)
+      Tag.remove(tag, collection=col)
 
     ## Del relations
-    old_tagnames = Tag.tag_structures_to_tagnames(self.tags)
+    #old_tagnames = Tag.tag_structures_to_tagnames(self.tags)
+    old_tagnames = self.tags
     # remove tags
     still_tags = []
     for tag in self.tags:
       if tag not in rm_tags:
         still_tags.append(tag)
     self.tags = still_tags
-    new_tagnames = Tag.tag_structures_to_tagnames(self.tags)
+    #new_tagnames = Tag.tag_structures_to_tagnames(self.tags)
+    new_tagnames = self.tags
+    #print "Tags to remove (Rel):"
+    #print old_tagnames
     TagRelation.remove(old_tagnames,col)
+    #print "Tags to add (Rel):"
+    #print new_tagnames
     TagRelation.add(new_tagnames,col)
+
+
+  def update_tags(self,tags):
+    """Updates the tag list, a full tag list is required.
+
+    The function adds, removes, and reorders the tag list"""
+    # make list unique, no double entries
+    tags_unique = []
+    for tag in tags:
+      if tag not in tags_unique:
+        tags_unique.append(tag.lower())
+    tags = tags_unique
+    add_tags = []
+    rm_tags = []
+    if not getattr(self,'tags',None):
+      self.tags = []
+
+    for tag in tags: # look which tags to add
+      if tag not in self.tags:
+        add_tags.append(tag)
+
+    for tag in self.tags: # look which tags to remove
+      if tag not in tags:
+        rm_tags.append(tag)
+
+    self.add_tags(add_tags)
+    self.remove_tags(rm_tags)
+
+    self.tags = tags
+    return self.tags
+
 
 
 

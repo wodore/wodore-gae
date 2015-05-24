@@ -8,7 +8,7 @@ class CountableLazy(object):
   Adds a 'cnt' property which is accesses as 'count' property.
   Adds a 'count_incr()' and 'count_decr()' method.
   """
-  cnt = ndb.IntegerProperty(default=0, indexed=True)
+  cnt = ndb.IntegerProperty(default=0, indexed=True, required=True)
 
   _incr = 0
 

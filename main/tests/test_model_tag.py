@@ -442,11 +442,5 @@ class TestTaggable(unittest.TestCase):
     self.assertEqual(len(rel_dbs),2*4*3)
 
 
-
-
-
-
-
-
 if __name__ == "__main__":
   unittest.main()

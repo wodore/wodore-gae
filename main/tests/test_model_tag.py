@@ -109,6 +109,8 @@ class TestTagRelation(unittest.TestCase):
   def setUp(self):
     self.tag_list1 = ['one','two','three','four']
     self.tag_list2 = ['A','B','C','D','E']
+    self.L1 = 4
+    self.L2 = 5
 
 
   def test_init_tag_relation(self):
@@ -174,6 +176,54 @@ class TestTagRelation(unittest.TestCase):
     self.assertEqual(top_dbs[0].count,1)
     self.assertEqual(top_dbs[10],None)
     self.assertEqual(top_dbs[14],None)
+
+
+  def test_query_icon_relation(self):
+    #keys = TagRelation.add(self.tag_list1,collection='child1')
+    L1 = self.L1 # save length of the lists
+    L2 = self.L2
+    L12 = L1 + L2
+    L1e = L1 * (L1-1) # all entries
+    L2e = L2 * (L2-1) # all entries
+    L12e = L12 * (L12-1) # all entries
+    keys_child1 = TagRelation.add(self.tag_list2+self.tag_list1,collection='child1')
+    keys_child2 = TagRelation.add(self.tag_list2,collection='child2')
+    keys_top1 = TagRelation.add(self.tag_list1)
+    keys_top1 = TagRelation.add(self.tag_list1)
+# query for all
+    dbs = TagRelation.qry().fetch()
+    #TagRelation.print_list(dbs)
+    self.assertEqual(len(dbs),2*L12e+L2e)
+    self.assertEqual(dbs[0].count,3)
+    self.assertEqual(dbs[-1].count,1)
+# query only for a child
+    dbs_child1 = TagRelation.qry(collection='child1').fetch()
+    self.assertEqual(len(dbs_child1),L12e)
+# query only for one tag name
+    dbs_A = TagRelation.qry(tag_name='A').fetch()
+    #TagRelation.print_list(dbs_A)
+    self.assertEqual(len(dbs_A),(L12-1)*2+(L2-1))
+# query for one tag name and collection
+    dbs_A_child1 = TagRelation.qry(tag_name='A',collection='child1').fetch()
+    #TagRelation.print_list(dbs_A_child1)
+    self.assertEqual(len(dbs_A_child1),(L12-1))
+
+# query only for one tag relation
+    dbs_A = TagRelation.qry(related_to='A').fetch()
+    #TagRelation.print_list(dbs_A)
+    self.assertEqual(len(dbs_A),(L12-1)*2+(L2-1))
+# query for one tag name and collection
+    dbs_A_child1 = TagRelation.qry(related_to='A',collection='child1').fetch()
+    #TagRelation.print_list(dbs_A_child1)
+    self.assertEqual(len(dbs_A_child1),(L12-1))
+
+## Order by tag_name
+    dbs = TagRelation.qry(order_by_count=False).order(TagRelation.tag_name).fetch()
+    #TagRelation.print_list(dbs)
+    self.assertEqual(len(dbs),2*L12e+L2e)
+    self.assertEqual(dbs[0].tag_name,'a')
+    self.assertEqual(dbs[-1].tag_name,'two')
+
 
 
 

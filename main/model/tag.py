@@ -132,7 +132,7 @@ class Tag(Iconize, CountableLazy, ndb.Model):
       qry = qry.filter(cls.toplevel==toplevel)
     if name:
       qry_tmp = qry
-      qry = qry.filter(cls.name==name,)
+      qry = qry.filter(cls.name==name.lower())
     if collection:
       qry_tmp = qry
       qry = qry.filter(cls.collection == collection)
@@ -233,18 +233,57 @@ class TagRelation(CountableLazy, ndb.Model): # use the counter mixin
   @classmethod
   def add(cls, tag_names, collection=None):
     """Add relations by a tag list"""
+    if not tag_names:
+      return []
     keys = TagRelation.generate_all_keys(tag_names,collection)
     return cls.add_by_keys(keys)
 
   @classmethod
   def remove(cls, tag_names, collection=None):
     """Remove relations by a tag list"""
+    if not tag_names:
+      return []
     keys = TagRelation.generate_all_keys(tag_names,collection)
     cls.add_by_keys(keys,_incr=-1)
     return keys
 
 
   #TODO Queries
+  @classmethod
+  def qry(cls, tag_name=None, related_to=None, toplevel=None, \
+      collection=None,  order_by_count=True, **kwargs):
+    """Query for the icon model"""
+    qry = cls.query(**kwargs)
+    if tag_name:
+      qry_tmp = qry
+      qry = qry.filter(cls.tag_name==tag_name.lower())
+    if toplevel:
+      qry_tmp = qry
+      qry = qry.filter(cls.toplevel==toplevel)
+    if related_to:
+      qry_tmp = qry
+      qry = qry.filter(cls.related_to==related_to.lower())
+    if collection:
+      qry_tmp = qry
+      qry = qry.filter(cls.collection == collection)
+    if order_by_count:
+      qry_tmp = qry
+      qry = qry.order(-cls.cnt)
+    #else filter for private True and False
+    return qry
+
+  @staticmethod
+  def print_list(dbs):
+    print "\n+-------------------+-------------------+-------------------+-----------+"
+    print "| {:<18}| {:<18}| {:<18}| {:<10}|".\
+        format("tag", "related to", "collection", "count")
+    print "+-------------------+-------------------+-------------------+-----------+"
+    for db in dbs:
+      print "| {:<18}| {:<18}| {:<18}| {:<10}|".\
+          format(db.tag_name, db.related_to, db.collection, db.count)
+    print "+-------------------+-------------------+-------------------+-----------+"
+    print
+    print
 
 
 

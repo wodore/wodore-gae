@@ -285,7 +285,6 @@ class TagRelation(CountableLazy, ndb.Model): # use the counter mixin
     return keys
 
 
-  #TODO Queries
   @classmethod
   def qry(cls, tag_name=None, related_to=None, toplevel=None, \
       collection=None,  order_by_count=True, **kwargs):

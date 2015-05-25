@@ -25,6 +25,9 @@ else:
   CURRENT_VERSION_DATE = datetime.utcfromtimestamp(CURRENT_VERSION_TIMESTAMP)
 
   import model
+  import sys # only for tests
+  print dir(model)
+  print sys.path
   CONFIG_DB = model.Config.get_master_db()
   SECRET_KEY = CONFIG_DB.flask_secret_key.encode('ascii')
   RECAPTCHA_PUBLIC_KEY = CONFIG_DB.recaptcha_public_key

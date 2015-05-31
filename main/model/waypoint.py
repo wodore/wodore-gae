@@ -28,7 +28,7 @@ class WayPoint(Taggable, ndb.Model):
   modified = ndb.DateTimeProperty(auto_now=True)
 
   @classmethod
-  def qry(cls, name=None, collection=None,  \
+  def qry(cls, name=None, collection=None, tag=None, \
       url=None,  order_by_date='modified', **kwargs):
     """Query for way points"""
     qry = cls.query(**kwargs)
@@ -38,19 +38,37 @@ class WayPoint(Taggable, ndb.Model):
     if collection:
       qry_tmp = qry
       qry = qry.filter(cls.collection==collection)
+    if tag:
+      qry_tmp = qry
+      qry = qry.filter(cls.tags==tag)
     if url:
       qry_tmp = qry
       qry = qry.filter(cls.url==url.lower())
-    if order_by_data == 'modified':
+    if order_by_date == 'modified':
       qry_tmp = qry
       qry = qry.order(-cls.modified)
-    elif order_by_data == 'created':
+    elif order_by_date == 'created':
       qry_tmp = qry
       qry = qry.order(-cls.created)
     #else filter for private True and False
     return qry
 
-
+  @staticmethod
+  def print_list(dbs):
+    print "\n+-------------------+-------------------+-------------------+"\
+        +"-------------------+-------------------+-----------------------"
+    print "| {:<18}| {:<18}| {:<18}| {:<18}| {:<18}| {:<14} {:<48}".\
+        format("name", "collection", "description", "url", "geo", "tags", "custom field")
+    print "+-------------------+-------------------+-------------------+"\
+        +"-------------------+-------------------+-----------------------"
+    for db in dbs:
+      print "| {:<18}| {:<18}| {:<18}| {:<18}| {:<18}|{:<14} {:<48}".\
+          format(db.name, db.collection, db.description, db.url, db.geo,
+          db.tags,db.custom_fields)
+    print "+-------------------+-------------------+-------------------+"\
+        +"-------------------+-------------------+-----------------------"
+    print
+    print
 
 # ADD them later
 #  @classmethod

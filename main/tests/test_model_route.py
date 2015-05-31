@@ -10,6 +10,8 @@ import unittest
 
 from google.appengine.ext import ndb#, testbed
 
+import geojson as gj
+
 from route import Route, RouteRefStructure, RouteDrawingStructure
 from waypoint import WayPoint
 from tag import TagStructure, Tag, TagRelation
@@ -150,6 +152,29 @@ class TestRoute(unittest.TestCase):
     demo1t = demo1_key.get()
     self.assertEqual(demo1t.refs[0].key.get().collection,'one')
     self.assertEqual(demo1t.refs[0].key.get().name,'wp1')
+
+  def test_route_add_drawing(self):
+    my_point = gj.Point((-3.68, 40.41))
+    drawing = gj.Feature(geometry=my_point, properties={"country": "Spain"})
+    demo1 = Route(name='demo1',collection='one')
+    demo1.add_drawing(drawing=drawing)
+    self.assertEqual(demo1.drawings[0].name,'drawing 1')
+    self.assertEqual(demo1.drawings[0].drawing,drawing)
+# another drawing
+    my_point2 = gj.Point((-5.68, 42.41))
+    drawing = gj.Feature(geometry=my_point2, properties={"country": "Portugal"})
+    demo1.add_drawing(drawing=drawing)
+    self.assertEqual(demo1.drawings[1].name,'drawing 2')
+    self.assertEqual(demo1.drawings[1].drawing,drawing)
+# add one as GeoJSON
+    my_point3 = gj.Point((-7.68, 44.41))
+    drawing = gj.Feature(geometry=my_point3, properties={"country": "Chinese"})
+    demo1.add_drawing(drawing_geojson=gj.dumps(drawing), name='DRAW3')
+    self.assertEqual(demo1.drawings[2].name,'DRAW3')
+    self.assertEqual("".format(demo1.drawings[2].drawing),"".format(drawing))
+# add one as GeoJSON
+
+
 
 
 

@@ -3,6 +3,7 @@
 from __future__ import absolute_import
 
 from google.appengine.ext import ndb
+import geojson
 
 # import do not work yet (for unit test)
 # add them later
@@ -37,7 +38,7 @@ class RouteDrawingStructure(ndb.Model): # use the counter mixin
   """
   #tag_key = ndb.KeyProperty(required=False)
   name = ndb.StringProperty(required=True)
-  drawing = ndb.JsonProperty(indexed=False) # GeoJSON
+  drawing = ndb.JsonProperty(indexed=False) # GeoJSON Object (geojson)
   active = ndb.BooleanProperty(required=True,default=True)
 
 
@@ -84,6 +85,19 @@ class Route(Taggable, ndb.Model):
 
 
     self.refs.append(ref)
+
+  def add_drawing(self,drawing=None, drawing_geojson=None, name=None):
+    """Either 'drawing' or 'drawing_geojson' is required.
+    'drawing' is a `geojson` object. Preferable as 'Feature' or 'FeatureCollection'
+    """
+    if drawing_geojson:
+      drawing = geojson.loads(drawing_geojson)
+    if not name:
+      name = "drawing {}".format(len(self.drawings)+1)
+
+    draw_struct = RouteDrawingStructure(name=name,drawing=drawing)
+
+    self.drawings.append(draw_struct)
 
 
   @classmethod

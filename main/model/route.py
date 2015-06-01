@@ -7,10 +7,10 @@ import geojson
 
 # import do not work yet (for unit test)
 # add them later
-#from api import fields
-#import model
-#import util
-#import config
+from api import fields
+import model
+import util
+import config
 
 #TODO import Taggable
 
@@ -42,7 +42,7 @@ class RouteDrawingStructure(ndb.Model): # use the counter mixin
   active = ndb.BooleanProperty(required=True,default=True)
 
 
-class Route(Taggable, ndb.Model):
+class Route(Taggable, model.Base):
   """Route model.
   The properties are not very well defined yet.
   Not good is still visible, which should show if its includeds other routes or just waypoints).
@@ -58,8 +58,8 @@ class Route(Taggable, ndb.Model):
   geo = ndb.GeoPtProperty(indexed=True) # lat/long coordinates of route (middle?)
   custom_fields = ndb.GenericProperty(repeated=True)
   creator = ndb.KeyProperty(kind="User") # default: current user key
-  created = ndb.DateTimeProperty(auto_now_add=True)
-  modified = ndb.DateTimeProperty(auto_now=True)
+  #created = ndb.DateTimeProperty(auto_now_add=True)
+  #modified = ndb.DateTimeProperty(auto_now=True)
 
   def add_ref(self,ref_structure=None,ref_key=None,copy=True):
     """Add a reference strcuture, use this instead of directly add it to the property
@@ -149,21 +149,20 @@ class Route(Taggable, ndb.Model):
     return klass(**props)
 
 
-# ADD them later
-#  @classmethod
-#  def get_dbs(
-#      cls, admin=None, active=None, verified=None, permissions=None, **kwargs
-#    ):
-#    return super(User, cls).get_dbs(
-#        admin=admin or util.param('admin', bool),
-#        active=active or util.param('active', bool),
-#        verified=verified or util.param('verified', bool),
-#        permissions=permissions or util.param('permissions', list),
-#        **kwargs
-#      )
-#
-#
-#  FIELDS = {
-#    }
-#
-#  FIELDS.update(model.Base.FIELDS)
+  @classmethod
+  def get_dbs(
+      cls, name=None, collection=None, geo=None, creator=None, **kwargs
+    ):
+    return super(User, cls).get_dbs(
+        name=name or util.param('name', None),
+        collection=collection or util.param('collection', None),
+        geo=geo or util.param('geo', None),
+        creater=creater or util.param('creater', ndb.Key),
+        **kwargs
+      )
+
+
+  FIELDS = {
+    }
+
+  FIELDS.update(model.Base.FIELDS)

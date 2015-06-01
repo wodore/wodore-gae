@@ -1,11 +1,12 @@
 # coding: utf-8
 
-print "Import 'model' stuff"
 from .base import Base
 from .config_auth import ConfigAuth
 from .config import Config
 from .user import User
-#from .tags import Tag, TagMixin
 
-print "Finished import 'model' stuff"
+from .route import Route, RouteRefStructure, RouteDrawingStructure
+from .waypoint import WayPoint
+from .tag import TagStructure, Tag, TagRelation
+
 #import .tags

@@ -28,6 +28,18 @@ class Base(ndb.Model):
         **kwargs
       )
 
+  @classmethod
+  @ndb.transactional
+  def get_or_create(cls, id, parent=None, **kwargs):
+    key = ndb.Key(cls, id, parent=parent)
+    ent = key.get()
+    if ent is not None:
+      return (ent, False)  # False meaning "not created"
+    ent = cls(**kwargs)
+    ent.key = key
+    ent.put()
+    return (ent, True)  # True meaning "created"
+
   FIELDS = {
       'key': fields.Key,
       'id': fields.Id,

@@ -1,0 +1,161 @@
+import sys, os
+
+#import logging
+import unittest
+
+from google.appengine.ext import ndb#, testbed
+
+class TestCollection(unittest.TestCase):
+  # enable the datastore stub
+  nosegae_datastore_v3 = True
+  nosegae_memcache = True
+  #import model # does not work yet
+
+  def setUp(self):
+    global config
+    global model
+    import config
+    import model
+
+  def test_init_collection(self):
+    C1 = model.Collection(name='C1')
+    C1.put()
+    assert C1 is not None
+    self.assertEqual(C1.name, 'C1')
+
+  def test_create_collection(self):
+    key1 = model.Collection.create(name='C1',creator=ndb.Key('User','one'))
+    db = key1.get()
+    #model.Collection.print_list([db])
+    self.assertEqual(db.name, 'C1')
+    self.assertTrue(db.active)
+    self.assertFalse(db.public)
+    self.assertEqual(db.creator, ndb.Key('User','one'))
+    self.assertEqual(db.cnt, 1)
+    db.incr()
+    db.put()
+    db = key1.get()
+    self.assertEqual(db.cnt, 2)
+
+  def test_query_collection(self):
+    model.Collection.create(name='C1',creator=ndb.Key('User','one'))
+    model.Collection.create(name='C2',creator=ndb.Key('User','one'))
+    model.Collection.create(name='C3',creator=ndb.Key('User','two'),public=True)
+    model.Collection.create(name='C4',creator=ndb.Key('User','two'))
+    model.Collection.create(name='C4',creator=ndb.Key('User','three'))
+    model.Collection.create(name='C4',creator=ndb.Key('User','three'),active=False)
+    dbs = model.Collection.qry().fetch()
+    #model.Collection.print_list(dbs)
+    self.assertEqual(len(dbs), 5)
+    dbs = model.Collection.qry(name='C1').fetch()
+    #model.Collection.print_list(dbs)
+    self.assertEqual(len(dbs), 1)
+    dbs = model.Collection.qry(active=False).fetch()
+    #model.Collection.print_list(dbs)
+    self.assertEqual(len(dbs), 1)
+    dbs = model.Collection.qry(public=True).fetch()
+    #model.Collection.print_list(dbs)
+    self.assertEqual(len(dbs), 1)
+    dbs = model.Collection.qry(creator=ndb.Key('User','two')).fetch()
+    #model.Collection.print_list(dbs)
+    self.assertEqual(len(dbs), 2)
+
+  def test_add_users_to_collection(self):
+    key1 = model.Collection.create(name='C1',creator=ndb.Key('User','one'))
+    model.Collection.add_users(key1,[ndb.Key('User','three'),
+      ndb.Key('User','two'),ndb.Key('User','one')])
+    col_dbs = model.Collection.qry().fetch()
+    #model.Collection.print_list(col_dbs)
+    self.assertEqual(len(col_dbs), 1)
+    self.assertEqual(col_dbs[0].count, 3)
+
+    usr_dbs = model.CollectionUser.qry().fetch()
+    #model.CollectionUser.print_list(usr_dbs)
+    self.assertEqual(len(usr_dbs), 3)
+    self.assertEqual(usr_dbs[0].collection, key1)
+    self.assertEqual(usr_dbs[0].key.parent(), key1)
+
+  def test_add_same_users_to_collection(self):
+    key1 = model.Collection.create(name='C1',creator=ndb.Key('User','one'))
+    model.Collection.add_users(key1,[ndb.Key('User','three'),ndb.Key('User','three'),
+      ndb.Key('User','two'),ndb.Key('User','one'),ndb.Key('User','one'),\
+          ndb.Key('User','three')])
+    col_dbs = model.Collection.qry().fetch()
+    #model.Collection.print_list(col_dbs)
+    self.assertEqual(len(col_dbs), 1)
+    self.assertEqual(col_dbs[0].count, 3)
+
+    usr_dbs = model.CollectionUser.qry().fetch()
+    #model.CollectionUser.print_list(usr_dbs)
+    self.assertEqual(len(usr_dbs), 3)
+
+  def test_add_users_to_collection_with_diff_permission(self):
+    key1 = model.Collection.create(name='C1',creator=ndb.Key('User','one'))
+    model.Collection.add_users(key1,[[ndb.Key('User','three'),'read'],
+      [ndb.Key('User','two'),'write'],[ndb.Key('User','one'),'none']],
+      permission=False)
+    col_dbs = model.Collection.qry().fetch()
+    #model.Collection.print_list(col_dbs)
+    self.assertEqual(len(col_dbs), 1)
+    self.assertEqual(col_dbs[0].count, 3)
+
+    usr_dbs = model.CollectionUser.qry().fetch()
+    #model.CollectionUser.print_list(usr_dbs)
+    self.assertEqual(len(usr_dbs), 3)
+    self.assertEqual(usr_dbs[0].permission, 'write')
+    self.assertEqual(usr_dbs[1].permission, 'read')
+    self.assertEqual(usr_dbs[2].permission, 'creator') # creator is not ovewritten
+                                          # it is last because it was not modified
+
+  def test_remove_users_from_collection(self):
+    key1 = model.Collection.create(name='C1',creator=ndb.Key('User','one'))
+    model.Collection.add_users(key1,[[ndb.Key('User','three'),'read'],
+      [ndb.Key('User','two'),'write'],[ndb.Key('User','one'),'none']],
+      permission=False)
+    col_dbs = model.Collection.qry().fetch()
+    #model.Collection.print_list(col_dbs)
+
+    usr_dbs = model.CollectionUser.qry().fetch()
+    #model.CollectionUser.print_list(usr_dbs)
+    self.assertEqual(len(usr_dbs), 3)
+
+# delete users with one none existing user
+    model.Collection.remove_users(key1,[ndb.Key('User','two'),\
+        ndb.Key('User','one'), ndb.Key('User','none')])
+
+    col_dbs = model.Collection.qry().fetch()
+    #model.Collection.print_list(col_dbs)
+    self.assertEqual(col_dbs[0].count, 1)
+
+
+    usr_dbs = model.CollectionUser.qry().fetch()
+    #model.CollectionUser.print_list(usr_dbs)
+    self.assertEqual(len(usr_dbs), 1)
+
+  def test__users_collection_permission(self):
+    key1 = model.Collection.create(name='C1',creator=ndb.Key('User','one'))
+    model.Collection.add_users(key1,[[ndb.Key('User','three'),'read'],
+      [ndb.Key('User','two'),'write'],[ndb.Key('User','one'),'none']],
+      permission=False)
+    col_dbs = model.Collection.qry().fetch()
+    #model.Collection.print_list(col_dbs)
+    perm = model.Collection.has_permission(key1,ndb.Key('User','three'),'write')
+    self.assertFalse(perm)
+    perm = model.Collection.has_permission(key1,ndb.Key('User','three'),'read')
+    self.assertTrue(perm)
+    perm = model.Collection.has_permission(key1,ndb.Key('User','three'),'none')
+    self.assertTrue(perm)
+    perm = model.Collection.has_permission(key1,ndb.Key('User','three'),'none',True)
+    self.assertFalse(perm)
+
+
+
+
+if __name__ == "__main__":
+  unittest.main()
+
+
+
+
+if __name__ == "__main__":
+  unittest.main()

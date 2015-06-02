@@ -2,7 +2,7 @@ import sys, os
 #sys.path.append('/home/tobias/data/git/wodore-gae/main/')
 #sys.path.append('./')
 #sys.path.append('./main')
-sys.path.append('./model')
+#sys.path.append('./model')
 
 
 #import logging

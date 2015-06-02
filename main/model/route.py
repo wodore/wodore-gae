@@ -12,11 +12,7 @@ import model
 import util
 import config
 
-#TODO import Taggable
-
-#class WayPoint(model.Base): # does not work with unit test yet
-from tag import Taggable#, TagStructure, Tag, TagRelation
-#from waypoint import WayPoint#, TagStructure, Tag, TagRelation
+from .tag import Taggable#, TagStructure, Tag, TagRelation
 
 
 class RouteRefStructure(ndb.Model): # use the counter mixin

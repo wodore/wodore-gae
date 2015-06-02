@@ -6,17 +6,17 @@ from google.appengine.ext import ndb
 
 # import do not work yet (for unit test)
 # add them later
-#from api import fields
-#import model
-#import util
-#import config
+from api import fields
+import model
+import util
+import config
 
 #TODO import Taggable
 
 #class WayPoint(model.Base): # does not work with unit test yet
-from tag import Taggable#, TagStructure, Tag, TagRelation
+from .tag import Taggable#, TagStructure, Tag, TagRelation
 
-class WayPoint(Taggable, ndb.Model):
+class WayPoint(Taggable, model.Base):
   name = ndb.StringProperty(required=True)
   collection = ndb.StringProperty(required=True, indexed=True )
   description = ndb.TextProperty()
@@ -24,8 +24,8 @@ class WayPoint(Taggable, ndb.Model):
   geo = ndb.GeoPtProperty(indexed=True) # lat/long coordinates
   custom_fields = ndb.GenericProperty(repeated=True)
   creator = ndb.KeyProperty(kind="User") # default: current user key
-  created = ndb.DateTimeProperty(auto_now_add=True)
-  modified = ndb.DateTimeProperty(auto_now=True)
+  #created = ndb.DateTimeProperty(auto_now_add=True)
+  #modified = ndb.DateTimeProperty(auto_now=True)
 
   @classmethod
   def qry(cls, name=None, collection=None, tag=None, \

@@ -1,6 +1,13 @@
+# coding: utf-8
+from __future__ import absolute_import
+
 from google.appengine.ext import ndb
 
-from counter import CountableLazy
+from api import fields
+import model
+import util
+import config
+from .counter import CountableLazy
 
 """
 An icon consists of two model classes:
@@ -25,12 +32,12 @@ class IconStructure(ndb.Model): # use the counter mixin
   filetype = ndb.StringProperty(choices=['svg','png','external'],indexed=True,
                      default='svg', required=True)
 
-class Icon(CountableLazy, ndb.Model):
+class Icon(CountableLazy, model.Base):
   name = ndb.StringProperty(indexed=True,required=True)
   icon = ndb.StructuredProperty(IconStructure)
   private = ndb.BooleanProperty(required=True,default=False)
-  created = ndb.DateTimeProperty(auto_now_add=True)
-  modified = ndb.DateTimeProperty(auto_now=True)
+  #created = ndb.DateTimeProperty(auto_now_add=True)
+  #modified = ndb.DateTimeProperty(auto_now=True)
   # Preferred urlsafe keys
   collection = ndb.StringProperty(required=True, indexed=True,
                   default='global', validator=lambda p, v: v.lower())
@@ -146,6 +153,19 @@ class Icon(CountableLazy, ndb.Model):
     return cls.qry(toplevel=toplevel,collection=collection,private=private).\
         fetch(keys_only=keys_only, limit=limit)
 
+  @classmethod
+  def get_dbs(
+      cls, name=None, collection=None, private=None, toplevel=None, \
+          replaced_by=None, **kwargs
+    ):
+    return super(User, cls).get_dbs(
+        name=name or util.param('name', None),
+        collection=collection or util.param('collection', None),
+        private=private or util.param('private', bool),
+        toplevel=toplevel or util.param('toplevel', ndb.Key),
+        replaced_by=replaced_by or util.param('replaced_by', ndb.Key),
+        **kwargs
+      )
 
 
   def _add_and_put(self, auto=True):

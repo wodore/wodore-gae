@@ -1,7 +1,14 @@
+# coding: utf-8
+from __future__ import absolute_import
 from google.appengine.ext import ndb
 
-from counter import CountableLazy
-from icon import IconStructure, Iconize
+from api import fields
+import model
+import util
+import config
+
+from .counter import CountableLazy
+from .icon import IconStructure, Iconize
 
 """
 A tag consists of three model classes:
@@ -27,14 +34,14 @@ class TagStructure(ndb.Model): # use the counter mixin
   name = ndb.StringProperty(indexed=True,required=True)
   color = ndb.StringProperty(indexed=True,required=True)
 
-class Tag(Iconize, CountableLazy, ndb.Model):
+class Tag(Iconize, CountableLazy, model.Base):
   """Tag Model
   The key should have the following from: tag__{name}_{collection}"""
   name = ndb.StringProperty(indexed=True,required=True, validator=lambda p, v: v.lower())
   color = ndb.StringProperty(indexed=True,required=True,default='blue')
   approved = ndb.BooleanProperty(required=True,default=False)
-  created = ndb.DateTimeProperty(auto_now_add=True)
-  modified = ndb.DateTimeProperty(auto_now=True)
+  #created = ndb.DateTimeProperty(auto_now_add=True)
+  #modified = ndb.DateTimeProperty(auto_now=True)
   # Preferred urlsafe keys
   collection = ndb.StringProperty(required=True, indexed=True,
                   default='global')#, validator=lambda p, v: v.lower())

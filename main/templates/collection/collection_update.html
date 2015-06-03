@@ -1,0 +1,38 @@
+# extends 'base.html'
+# import 'macro/forms.html' as forms
+# import 'macro/utils.html' as utils
+
+# block content
+  <div class="page-header">
+    <h1>
+      {{utils.back_link('Back to collection list', 'collection_list', order='-modified')}}
+      {{title}}
+      # if current_user.user_db.key == col_db.creator
+        <small><span class="fa fa-hand-o-left" title="Owner"></span></small>
+      # endif
+    </h1>
+  </div>
+  <form method="POST" action="." novalidate>
+    <div class="row">
+      <div class="col-md-4 col-sm-6">
+        {{form.csrf_token}}
+        {{forms.text_field(form.name, autofocus=True)}}
+        {{forms.textarea_field(form.description)}}
+        {{forms.checkbox_field(form.active, checked=col_db.active)}}
+        {{forms.checkbox_field(form.public, checked=col_db.public)}}
+      </div>
+    </div>
+    <hr>
+    <div class="row">
+      <div class="col-md-6 col-md-offset-3">
+        <button type="submit" class="btn btn-primary btn-lg btn-block btn-loading" {{forms.data_loading_text()}}>
+          # if col_db.key
+            Update
+          # else
+            Create
+          # endif
+        </button>
+      </div>
+    </div>
+  </form>
+# endblock

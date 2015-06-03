@@ -38,7 +38,7 @@ class Collection(CountableLazy, model.Base):
     Returns collection key
     """
     new_col = Collection(name=name,creator=creator,active=active, public=public)
-    if description:
+    if description != None:
       new_col.description = description
 
 
@@ -183,7 +183,7 @@ class Collection(CountableLazy, model.Base):
   def get_dbs(
       cls, name=None, active=None, creator=None,**kwargs
     ):
-    return super(User, cls).get_dbs(
+    return super(Collection, cls).get_dbs(
         name=name or util.param('name', None),
         active=active or util.param('active', bool),
         creator=creator or util.param('creator', ndb.Key),

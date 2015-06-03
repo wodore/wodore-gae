@@ -64,9 +64,15 @@ class Collection(CountableLazy, model.Base):
       if multi_permissions:
         permission = user_key[1]
         user_key = user_key[0]
+      user_db = user_key.get()
+      if not user_db:
+        continue
+        # TODO create key with email (function in User)
       db, new = CollectionUser.get_or_create(CollectionUser.to_key_id(user_key), \
           parent=collection_key,user=user_key,collection=collection_key, \
-          permission=permission, active=active)
+          permission=permission, active=active, \
+          user_name = user_db.name, user_username=user_db.username,\
+          user_active=user_db.active)
       changed = False
       if not new: # make updates
         if db.permission != permission and db.permission != 'creator':
@@ -206,6 +212,33 @@ class CollectionUser(model.Base):
   active = ndb.BooleanProperty(required=True,default=True)
   permission = ndb.StringProperty(required=True,
       choices=['creator', 'admin','write','read','none'], default='read')
+  user_name = ndb.StringProperty(required=True) # name property of User
+  user_username = ndb.StringProperty(required=True) # username of User
+  user_email = ndb.StringProperty(default='') # email of the user
+  user_active = ndb.BooleanProperty(default=True) # is the user active
+  user_avatar_url = ndb.StringProperty()
+
+  @classmethod
+  def update_user(cls, user_key):
+    """Updates the user_* fields if a user changed"""
+# TODO user a tasklet for this!!
+# TODO add this to the user_update method in control/user.py
+    user_db = user_key.get()
+    if not user_db:
+      return False
+    # get all collections for this user
+    dbs = []
+    for db in cls.qry(user=user_key):
+      db.user_name = user_db.name
+      db.user_username = user_db.username
+      db.user_email = user_db.email
+      db.user_active = user_db.active
+      if user_db.avatar_url:
+        db.user_avatar_url = user_db.avatar_url
+      dbs.append(db)
+    ndb.put_multi(dbs)
+
+
 
   @staticmethod
   def permission_to_number(permission):
@@ -229,10 +262,13 @@ class CollectionUser(model.Base):
         parent=collection_key)
 
   @classmethod
-  def qry(cls, collection=None, active=True, permission=None, \
+  def qry(cls, user=None, collection=None, active=True, permission=None, \
       order_by_date='modified', **kwargs):
     """Query for collections, if active='both' it is not queried for active."""
     qry = cls.query(**kwargs)
+    if user:
+      qry_tmp = qry
+      qry = qry.filter(cls.user==user)
     if collection:
       qry_tmp = qry
       qry = qry.filter(cls.parent==collection)
@@ -267,7 +303,7 @@ class CollectionUser(model.Base):
         +"-------------------+-------------------+-------------------+"
     for db in dbs:
       print "| {:<28}| {:<28}| {:<18}| {:<18}| {:<18}| {:<18}|".\
-          format(db.key.parent() or None, db.user, \
+          format(db.key.parent() or None, db.user_name, \
                 db.active, db.permission,"","")
     print "+-----------------------------+-----------------------------+-------------------+"\
         +"-------------------+-------------------+-------------------+"

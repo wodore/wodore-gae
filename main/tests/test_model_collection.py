@@ -16,6 +16,23 @@ class TestCollection(unittest.TestCase):
     global model
     import config
     import model
+    # add some user to user db
+    self.user = []
+    self.user.append(model.User(key=ndb.Key('User','zero'),
+        name = 'User Zero', username='zero',
+        email = 'zero@test.com', active = False, verified = False))
+    self.user.append(model.User(key=ndb.Key('User','one'),
+        name = 'User One', username='one',
+        email = 'one@test.com', active = True, verified = True))
+    self.user.append(model.User(key=ndb.Key('User','two'),
+        name = 'User Two', username='two',
+        email = 'two@test.com', active = True, verified = True))
+    self.user.append(model.User(key=ndb.Key('User','three'),
+        name = 'User Three', username='three',
+        email = 'three@test.com', active = True, verified = True))
+    self.user_key = []
+    for u in self.user:
+      self.user_key.append(u.put())
 
   def test_init_collection(self):
     C1 = model.Collection(name='C1')
@@ -149,10 +166,31 @@ class TestCollection(unittest.TestCase):
     self.assertFalse(perm)
 
 
+  def test_update_collection_user(self):
+    key1 = model.Collection.create(name='C1',creator=ndb.Key('User','one'))
+    model.Collection.add_users(key1,[ndb.Key('User','three'),ndb.Key('User','three'),
+      ndb.Key('User','two'),ndb.Key('User','one'),ndb.Key('User','one'),\
+          ndb.Key('User','three')])
+    key2 = model.Collection.create(name='C2',creator=ndb.Key('User','one'))
+    model.Collection.add_users(key2,[ndb.Key('User','three'),ndb.Key('User','one')])
+    key3 = model.Collection.create(name='C2',creator=ndb.Key('User','three'))
+    model.Collection.add_users(key3,[ndb.Key('User','one')])
 
+    usr_dbs = model.CollectionUser.qry().fetch()
+    #model.CollectionUser.print_list(usr_dbs)
+    self.assertEqual(len(usr_dbs), 7)
 
-if __name__ == "__main__":
-  unittest.main()
+    one_db = ndb.Key('User','one').get()
+    one_db.name = "New User One"
+    ukey1 = one_db.put()
+    model.CollectionUser.update_user(ukey1)
+
+    usr_dbs = model.CollectionUser.qry().fetch()
+    #model.CollectionUser.print_list(usr_dbs)
+    self.assertEqual(len(usr_dbs), 7)
+    self.assertEqual(usr_dbs[0].user_name, "New User One")
+    self.assertEqual(usr_dbs[2].user_name, "New User One")
+
 
 
 

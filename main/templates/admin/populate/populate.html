@@ -1,0 +1,15 @@
+# extends 'admin/admin_base.html'
+
+# block admin_content
+  <div class="row">
+    <div class="col-md-12">
+      <div class="panel-group" id="population_accordion" aria-multiselectable="true">
+          # import 'macro/forms.html' as forms
+          # include 'admin/populate/bit/_user.html'
+          # include 'admin/populate/bit/_collection.html'
+          # include 'admin/populate/bit/_collection_user.html'
+          # include 'admin/populate/bit/_tag.html'
+       </div>
+    </div>
+  </div>
+# endblock

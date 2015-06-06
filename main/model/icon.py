@@ -59,6 +59,7 @@ class Icon(CountableLazy, model.Base):
   @classmethod
   def create(cls,icon,name,collection='global',toplevel=None,private=False, auto=True):
     """ Creates and puts a new icon to the database.
+    As icon is a IconStructure expected.
     Returns Icon key"""
     new_icon = Icon(icon = icon,
         name=name,

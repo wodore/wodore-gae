@@ -9,9 +9,34 @@
     </a>
     <div id="populate_tag" class="panel-collapse collapse">
       <div class="panel-body">
-        Add Tag Population From
-          <p class="help-block">some help ...</p>
+        <p class="help-block">Generate tags.</p>
+        <form method="POST" action="/admin/populate/tag" novalidate>
+          <div class="row">
+            {{form_tag.csrf_token}}
+            <div class="col-sm-12">
+              {{forms.textarea_field(form_tag.tags, autofocus=True)}}
+            </div>
+            <div class="col-sm-6">
+              {{forms.checkbox_field(form_tag.random_tags)}}
+            </div>
+            <div class="col-sm-6">
+              {{forms.number_field(form_tag.max_tags)}}
+            </div>
+          <div class="col-sm-6">
+            {{forms.radio_icon_field(form_tag.incr,'info')}}
+          </div>
+          </div>
+          <div class="row">
+            <button type="submit" class="btn btn-primary btn-block btn-loading" 
+              id="populate_tag_submit" {{forms.data_loading_text()}}>
+              Generate
+            </button>
+          </div>
+        </form>
       </div>
+
+
+
     </div>
   </div>
 

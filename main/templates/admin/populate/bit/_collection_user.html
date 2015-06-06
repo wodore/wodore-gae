@@ -3,15 +3,36 @@
       <div class="panel-heading">
           <h4 class="panel-title">
             Collection User
-            <span class="fa fa-share-alt pull-right"></span>
+            <span class="fa fa-cubes pull-right"></span>
           </h4>
       </div>
     </a>
     <div id="populate_collection_user" class="panel-collapse collapse">
       <div class="panel-body">
-        Add Collection Population From
-          <p class="help-block">some help ...</p>
+       <p class="help-block">Add random user to collections.</p>
+      <form method="POST" action="/admin/populate/collection_user" novalidate>
+        <div class="row">
+          {{form_col.csrf_token}}
+          <div class="col-sm-6">
+            {{forms.number_field(form_col_user.user_min, autofocus=True)}}
+          </div>
+          <div class="col-sm-6">
+            {{forms.number_field(form_col_user.user_max, autofocus=True)}}
+          </div>
+          <div class="col-sm-6">
+            {{forms.number_field(form_col_user.max_collections, autofocus=True)}}
+          </div>
+          <div class="col-sm-12">
+            {{forms.radio_icon_field(form_col_user.permission,'info')}}
+          </div>
+        </div>
+      <div class="row">
+        <button type="submit" class="btn btn-primary btn-block btn-loading" 
+          id="populate_collection_user_submit" {{forms.data_loading_text()}}>
+          Add
+        </button>
+      </div>
+      </form>
       </div>
     </div>
   </div>
-

@@ -1,17 +1,39 @@
-  <div class="panel panel-default col-md-6">
-    <a data-toggle="collapse" data-parent=".panel-group" href="#populate_user">
-      <div class="panel-heading">
-          <h4 class="panel-title">
-            User
-            <span class="fa fa-group pull-right"></span>
-          </h4>
+<div class="panel panel-default col-md-6">
+  <a data-toggle="collapse" data-parent=".panel-group" href="#populate_user">
+    <div class="panel-heading">
+      <h4 class="panel-title">
+        User
+        <span class="fa fa-group pull-right"></span>
+      </h4>
+    </div>
+  </a>
+  <div id="populate_user" class="panel-collapse collapse">
+    <div class="panel-body">
+      <p class="help-block">Generate random users.</p>
+      <form method="POST" action="/admin/populate/user" novalidate>
+        <div class="row">
+          {{form_user.csrf_token}}
+          <div class="col-sm-6">
+            {{forms.number_field(form_user.number_of_users, prefix='#', autofocus=True)}}
+          </div>
+          <div class="col-sm-6">
+            {{forms.radio_icon_field(form_user.verified,'info')}}
+          </div>
+          <div class="col-sm-6">
+            {{forms.radio_icon_field(form_user.admin,'info')}}
+          </div>
+          <div class="col-sm-6">
+            {{forms.radio_icon_field(form_user.active,'info')}}
+          </div>
+        </div>
+      <div class="row">
+        <button type="submit" class="btn btn-primary btn-block btn-loading" 
+          id="populate_user_submit" {{forms.data_loading_text()}}>
+          Generate
+        </button>
       </div>
-    </a>
-    <div id="populate_user" class="panel-collapse collapse">
-      <div class="panel-body">
-        Add User Population From
-          <p class="help-block">some help ...</p>
-      </div>
+      </form>
     </div>
   </div>
+</div>
 

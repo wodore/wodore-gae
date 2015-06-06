@@ -1,0 +1,33 @@
+  <div class="panel panel-default col-md-6">
+    <a data-toggle="collapse" data-parent=".panel-group" href="#populate_icon">
+      <div class="panel-heading">
+          <h4 class="panel-title">
+            Icon
+            <span class="fa fa-picture-o pull-right"></span>
+          </h4>
+      </div>
+    </a>
+    <div id="populate_icon" class="panel-collapse collapse">
+      <div class="panel-body">
+        <p class="help-block">Upload icons.</p>
+        <form method="POST" action="/admin/populate/icon" enctype="multipart/form-data">
+          <div class="row">
+            {{form_icon.csrf_token}}
+            <div class="col-sm-12">
+              {{forms.input_field(form_icon.icon, multiple="")}}
+            </div>
+          </div>
+          <div class="row">
+            <button type="submit" class="btn btn-primary btn-block btn-loading" 
+              id="populate_icon_submit" {{forms.data_loading_text()}}>
+              Upload
+            </button>
+          </div>
+        </form>
+      </div>
+
+
+
+    </div>
+  </div>
+

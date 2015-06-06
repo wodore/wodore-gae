@@ -9,8 +9,39 @@
     </a>
     <div id="populate_collection" class="panel-collapse collapse">
       <div class="panel-body">
-        Add Collection Population From
-          <p class="help-block">some help ...</p>
+       <p class="help-block">Generate random collections.</p>
+      <form method="POST" action="/admin/populate/collection" novalidate>
+        <div class="row">
+          {{form_col.csrf_token}}
+          <div class="col-sm-4">
+            {{forms.number_field(form_col.number_of_collections, autofocus=True)}}
+          </div>
+          <div class="col-sm-4">
+            {{forms.radio_icon_field(form_col.active,'info')}}
+          </div>
+          <div class="col-sm-4">
+            {{forms.radio_icon_field(form_col.public,'info')}}
+          </div>
+          <div class="col-sm-6">
+            {{forms.radio_field(form_col.creator)}}
+          </div>
+          <div class="col-sm-6">
+            {{forms.email_field(form_col.user_email)}}
+          </div>
+          <div class="col-sm-6">
+            {{forms.number_field(form_col.desc_min, autofocus=True)}}
+          </div>
+          <div class="col-sm-6">
+            {{forms.number_field(form_col.desc_max, autofocus=True)}}
+          </div>
+        </div>
+      <div class="row">
+        <button type="submit" class="btn btn-primary btn-block btn-loading" 
+          id="populate_collection_submit" {{forms.data_loading_text()}}>
+          Generate
+        </button>
+      </div>
+      </form>
       </div>
     </div>
   </div>

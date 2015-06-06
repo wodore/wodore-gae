@@ -137,6 +137,35 @@
   </div>
 # endmacro
 
+# macro radio_icon_field(field,style)
+  <div class="form-group {{'has-error' if field.errors}}">
+    {{field.label(class='control-label')}}
+    {{field_optional(field)}}
+    {{field_description(field)}}
+      <div class="{{type}}">
+        <div class="btn-group" data-toggle="buttons">
+    # for key, value in field.choices
+      ##<div class="{{type}}">
+        <label class="btn btn-{{style}}
+            # if field.data and key in field.data
+              active
+            # endif
+            "
+            >
+          <input type="radio" name="{{field.name}}" value="{{key}}" autocomplete="off" 
+            # if field.data and key in field.data
+              checked
+            # endif
+          > <span class="fa fa-fw fa-{{value}}"></span>
+        </label>
+      ##</div>
+    # endfor
+      </div>
+      </div>
+    {{field_errors(field)}}
+  </div>
+# endmacro
+
 
 # macro multiple_checkbox_field(field)
   {{list_input_field(field, 'checkbox')}}

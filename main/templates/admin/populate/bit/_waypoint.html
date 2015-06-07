@@ -1,0 +1,63 @@
+  <div class="panel panel-default col-md-6">
+    <a data-toggle="collapse" data-parent=".panel-group" href="#populate_waypoint">
+      <div class="panel-heading">
+          <h4 class="panel-title">
+            Waypoint
+            <span class="fa fa-map-marker pull-right"></span>
+          </h4>
+      </div>
+    </a>
+    <div id="populate_waypoint" class="panel-collapse collapse">
+      <div class="panel-body">
+        <p class="help-block">Upload icons.</p>
+        <form method="POST" action="/admin/populate/waypoint" enctype="multipart/form-data">
+          <div class="row">
+            {{form_waypoint.csrf_token}}
+            <div class="col-sm-12">
+              {{forms.radio_icon_field(form_waypoint.collection,'info')}}
+            </div>
+            <div class="col-sm-12">
+              {{forms.number_field(form_waypoint.max_waypoints, prefix='#')}}
+            </div>
+            <div class="col-sm-12">
+              <h4> <span class="fa fa-random"></span> If Random </h4>
+            </div>
+            <div class="col-sm-12">
+              {{forms.email_field(form_waypoint.collection_user, prefix='@')}}
+            </div>
+            <div class="col-sm-12">
+              {{forms.number_field(form_waypoint.max_collections, prefix='#')}}
+            </div>
+            <div class="col-sm-12">
+              <h4> <span class="fa fa-key"></span> If By Key </h4>
+            </div>
+            <div class="col-sm-12">
+              {{forms.text_field(form_waypoint.collection_key, prefix='key')}}
+            </div>
+            <div class="col-sm-12">
+              <h4> <span class="fa fa-tags"></span> Tags </h4>
+            </div>
+            <div class="col-sm-12">
+              {{forms.radio_icon_field(form_waypoint.tags,'info')}}
+            </div>
+            <div class="col-sm-12">
+              {{forms.number_field(form_waypoint.max_tags, prefix='#')}}
+            </div>
+            <div class="col-sm-12">
+              {{forms.textarea_field(form_waypoint.tag_list)}}
+            </div>
+          </div>
+          <div class="row">
+            <button type="submit" class="btn btn-primary btn-block btn-loading" 
+              id="populate_icon_submit" {{forms.data_loading_text()}}>
+              Generate
+            </button>
+          </div>
+        </form>
+      </div>
+
+
+
+    </div>
+  </div>
+

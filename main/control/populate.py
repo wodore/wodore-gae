@@ -42,6 +42,7 @@ def admin_populate(form=None):
   form_col_user = PopulateCollectionUserForm()
   form_tag = PopulateTagForm()
   form_icon = PopulateIconForm()
+  form_waypoint = PopulateWayPointForm()
 
   return flask.render_template(
       'admin/populate/populate.html',
@@ -51,7 +52,8 @@ def admin_populate(form=None):
       form_col=form_col,
       form_col_user=form_col_user,
       form_tag=form_tag,
-      form_icon=form_icon
+      form_icon=form_icon,
+      form_waypoint=form_waypoint
     )
 
 ## USER ----------------------
@@ -191,7 +193,7 @@ def admin_populate_tag():
       fake = Factory.create()
       tags = fake.words(nb=form_tag.max_tags.data)
     else:
-      tags = form_tag.tags.data.split(',')
+      tags = form_tag.tags.data.split(', ')
     cnt = 0
     incr = True if form_tag.incr.data=='true' else False
     for tag in tags:
@@ -212,16 +214,82 @@ def admin_populate_icon():
   if form_icon.validate_on_submit() or True:
     names = ""
     fs = flask.request.files.getlist("icon")
+    cnt = 0
     for f in fs:
       icon = model.IconStructure(data=f.read())
-      print icon.data
       model.Icon.create(icon=icon,
           name=f.filename.split('.')[0])
       names += f.filename.split('.')[0]+" "
+      cnt += 1
 
-    flask.flash('Added icon {}.'.format(names), category='success')
+    flask.flash('Added {} icon: {}'.format(cnt, names), category='success')
 
   return flask.redirect(flask.url_for('admin_populate'))
+
+###############################################################################
+# WayPoint
+@app.route('/admin/populate/waypoint', methods=['POST'])
+@auth.admin_required
+def admin_populate_waypoint():
+  form_waypoint = PopulateWayPointForm()
+  if form_waypoint.validate_on_submit() or True:
+    # Create a fake instance
+    fake = Factory.create()
+    # create collection list
+    if form_waypoint.collection.data == "random":
+      if form_waypoint.collection_user.data:
+        email = form_waypoint.collection_user.data
+        col_usr_dbs = model.CollectionUser.qry(user_email=email).\
+            fetch(limit=form_waypoint.max_collections.data)
+        if not col_usr_dbs:
+          flask.flash("No colleciton found for user {}."\
+              .format(email), category='danger')
+          return flask.redirect(flask.url_for('admin_populate'))
+        col_keys=[]
+        for db in col_usr_dbs:
+          col_keys.append(db.collection)
+      else:
+        col_keys = model.Collection.qry().\
+            fetch(limit=form_waypoint.max_collections.data,\
+            keys_only=True)
+
+    elif form_waypoint.collection.data == "search":
+      col_keys = [ndb.Key(urlsafe=form_waypoint.collection_key.data)]
+    else: # not is not implemented/possible
+      flask.flash("Key error, 'none' is not possible.", category='danger')
+      return flask.redirect(flask.url_for('admin_populate'))
+# set up tag list
+    if form_waypoint.tags.data == "list":
+      tag_list = form_waypoint.tag_list.data.split(', ')
+    elif form_waypoint.tags.data == "random":
+      tag_dbs = model.Tag.qry(collection='global').fetch(limit=10000)
+      tag_list = []
+      for db in tag_dbs:
+        tag_list.append(db.name)
+    else:
+      tag_list = None
+
+    dbs = []
+    cnt = 0
+# create waypoints
+    for key in col_keys:
+      for i in range(0,form_waypoint.max_waypoints.data):
+        name = fake.word()
+        lat = random.random()*180 - 90
+        lng = random.random()*360 - 180
+        geo = ndb.GeoPt(lat,lng)
+        db = model.WayPoint(name=name,collection=key.urlsafe(),geo=geo)
+        if tag_list:
+          tag_nr = int(random.random()*form_waypoint.max_tags.data)
+          db.add_tags(random.sample(tag_list,tag_nr))
+        dbs.append(db)
+        cnt += 1
+
+    ndb.put_multi(dbs)
+    flask.flash('Added {} waypoints'.format(cnt), category='success')
+
+  return flask.redirect(flask.url_for('admin_populate'))
+
 #
 #
 ###############################################################################
@@ -350,4 +418,62 @@ class PopulateIconForm(wtf.Form):
 
   def __init__(self, *args, **kwds):
     super(PopulateIconForm, self).__init__(*args, **kwds)
+
+###############################################################################
+# WayPoint
+class PopulateWayPointForm(wtf.Form):
+  collection = wtforms.RadioField(u'Collection',[wtforms.validators.required()],\
+      description='How should collection be used (random, none (toplevel), search).',
+      choices=[\
+      ("random", "random"),\
+      ("search","key")],default="random")
+
+  max_waypoints = wtforms.IntegerField(
+      u'Max waypoints per collection',
+      [wtforms.validators.required()],
+      description='How many waypoints are added to one collection',
+      default=5
+    )
+
+  max_collections = wtforms.IntegerField(
+      u'Max collections',
+      [wtforms.validators.required()],
+      description='How many collections are used to add waypoints, only if random',
+      default=10
+    )
+  collection_user = wtforms.StringField(
+      u'Collection user email.',
+      description='Only take random collection with this user.'
+    )
+
+  collection_key = wtforms.StringField(
+      u'URL safe collection key.',
+      [wtforms.validators.required()],
+      description='Only if search.'
+    )
+
+  tags = wtforms.RadioField(u'Random or from list',[wtforms.validators.required()],\
+      description='Add random tags from a list or from all possible tags, or don\'t add tags at all.',
+      choices=[\
+      ("list","list"),\
+      ("random", "random"),\
+      ("none", "ban")\
+      ],default="list")
+
+  max_tags = wtforms.IntegerField(
+      u'Max tags per collection',
+      [wtforms.validators.required()],
+      description='Can also be less (random).',
+      default=10
+    )
+
+  DEFAULT_TAGS="""hiking, skitour, ski, mountain, peak, hill, T1, T2, T3, T4, T5, T6, -, +, river, lake, forest, over 3000, over 4000, bike, moutainbike, running, hangover, accomodation, hut, hostel, hotel, bus station, train station, public transport, station, restaurant, food, supermarket, beer, break, view, danger, ship, train, cable car, parking"""
+  tag_list = wtforms.TextAreaField(
+      u'Tag list',
+      default=DEFAULT_TAGS,
+      description="Separate the tags with a comma"
+    )
+
+  def __init__(self, *args, **kwds):
+    super(PopulateWayPointForm, self).__init__(*args, **kwds)
 

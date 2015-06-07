@@ -72,7 +72,8 @@ class Collection(CountableLazy, model.Base):
           parent=collection_key,user=user_key,collection=collection_key, \
           permission=permission, active=active, \
           user_name = user_db.name, user_username=user_db.username,\
-          user_active=user_db.active)
+          user_email=user_db.email, user_active=user_db.active,
+          user_avatar_url = user_db.avatar_url)
       changed = False
       if not new: # make updates
         if db.permission != permission and db.permission != 'creator':
@@ -223,6 +224,7 @@ class CollectionUser(model.Base):
     """Updates the user_* fields if a user changed"""
 # TODO user a tasklet for this!!
 # TODO add this to the user_update method in control/user.py
+# TODO ad user_* to qry!
     user_db = user_key.get()
     if not user_db:
       return False
@@ -263,6 +265,7 @@ class CollectionUser(model.Base):
 
   @classmethod
   def qry(cls, user=None, collection=None, active=True, permission=None, \
+      user_email=None,
       order_by_date='modified', **kwargs):
     """Query for collections, if active='both' it is not queried for active."""
     qry = cls.query(**kwargs)
@@ -283,6 +286,9 @@ class CollectionUser(model.Base):
     if permission:
       qry_tmp = qry
       qry = qry.filter(cls.permission==permission)
+    if user_email:
+      qry_tmp = qry
+      qry = qry.filter(cls.user_email==user_email)
     if order_by_date == 'modified':
       qry_tmp = qry
       qry = qry.order(-cls.modified)

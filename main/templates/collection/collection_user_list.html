@@ -1,0 +1,101 @@
+# extends 'admin/admin_base.html'
+# import 'macro/utils.html' as utils
+
+# block head
+  {{utils.prefetch_link(next_url)}}
+# endblock
+
+# block admin_content
+  <div class="panel panel-default">
+    <div class="panel-body">
+      <a class="btn btn-sm btn-primary" href="{{url_for('collection_update')}}">
+        <span class="fa fa-fw fa-user-plus"></span> New Collection
+      </a>
+
+      <div class="btn-group btn-group-sm">
+        <button type="button" class="btn btn-primary" disabled>Limit</button>
+        {{utils.filter_by_link('limit', 16)}}
+        {{utils.filter_by_link('limit', 64)}}
+        {{utils.filter_by_link('limit', 128)}}
+        {{utils.filter_by_link('limit', 512)}}
+        {{utils.filter_by_link('limit', 1024)}}
+      </div>
+
+      <div class="btn-group btn-group-sm">
+        <button type="button" class="btn btn-success" disabled>Public</button>
+        {{utils.filter_by_link('public', True, 'thumbs-o-up')}}
+        {{utils.filter_by_link('public', False, 'thumbs-o-down')}}
+      </div>
+
+      <div class="btn-group btn-group-sm">
+        <button type="button" class="btn btn-info" disabled>Active</button>
+        {{utils.filter_by_link('active', True, 'thumbs-o-up')}}
+        {{utils.filter_by_link('active', False, 'thumbs-o-down')}}
+      </div>
+    </div>
+  </div>
+
+  <div class="alert alert-warning alert-dismissable {{'hide' if col_usr_dbs|count > 0}}">
+    <a href="{{url_for('collection_user_list', order='-modified')}}" class="close" title="Remove all filters">&times;</a>
+    There are no users matching the filters.
+  </div>
+
+  <div class="table-responsive {{'hide' if col_usr_dbs|count == 0}}">
+    <table class="table table-bordered table-hover">
+      <thead>
+        <tr class="text-nowrap">
+          <th class="col-xs-4"><input id="select-all" type="checkbox"> {{utils.order_by_link('collection', 'Collection')}}</th>
+          <th class="col-xs-2">{{utils.order_by_link('modified', 'Modified')}}<br><small>{{utils.order_by_link('created', 'Created')}}</small></th>
+          <th class="text-center" title="Key"><span class="fa fa-key"></span></th>
+          <th class="text-center" title="User"><span class="fa fa-user"></span></th>
+        </tr>
+      </thead>
+      <tbody>
+        # for db in col_usr_dbs
+          <tr id="{{db.key.urlsafe()}}" class="row-link {{'text-muted' if not db.active}}" data-href="{{url_for('collection_update', col_key=db.key.urlsafe())}}">
+            <td class="name">
+              <label class="not-link">
+                <input type="checkbox" name="db" value="{{db.key.urlsafe()}}">
+              </label>
+              <span>{{db.collection.urlsafe()}}</span>
+              # if current_user.id == db.user.id()
+                <span class="fa fa-hand-o-left" title="You"></span>
+              # endif
+              <br>
+              <span class=small>
+                <a href="{{update_query_argument('collection', db.collection.urlsafe())}}" class="">
+                  filter <span class="fa fa-link"></span>
+                </a>
+              </span>
+            </td>
+            <td>
+              <time datetime="{{db.modified}}">
+                {{db.modified.strftime('%Y-%m-%d')}}
+              </time><br>
+              <time class="text-success small" datetime="{{db.created}}">
+                {{db.created.strftime('%Y-%m-%d')}}
+              </time>
+            </td>
+            <td>
+              <a href="{{update_query_argument('user_name', db.user_name)}}" class="">
+                {{db.user_name}} <span class="fa fa-link"></span>
+              </a><br>
+              <span class=small>
+                <a href="{{update_query_argument('user_username', db.user_username)}}" class="">
+                  {{db.user_username}} <span class="fa fa-link"></span>
+                </a>
+              </span>
+            </td>
+            <td>
+              <a href="{{update_query_argument('user_email', db.user_email)}}" class="">
+                {{db.user_email}} <span class="fa fa-link"></span>
+              </a>
+            </td>
+          </tr>
+        # endfor
+      </tbody>
+    </table>
+  </div>
+
+  {{utils.next_link(next_url)}}
+# endblock

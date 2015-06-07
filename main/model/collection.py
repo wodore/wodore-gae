@@ -316,6 +316,24 @@ class CollectionUser(model.Base):
     print
     print
 
+  @classmethod
+  def get_dbs(
+      cls, user=None, collection=None, active=None, permission=None,
+      user_name=None, user_username=None, user_email=None, user_active=None, **kwargs
+    ):
+    return super(CollectionUser, cls).get_dbs(
+        user=user or util.param('user', ndb.Key),
+        collection=collection or util.param('collection', ndb.Key),
+        active=active or util.param('active', bool),
+        permission=permission or util.param('permission', str),
+        user_name=user_name or util.param('user_name', str),
+        user_username=user_username or util.param('user_username', str),
+        user_email=user_email or util.param('user_email', str),
+        user_active=user_active or util.param('user_active', str),
+        **kwargs
+      )
+
+
   FIELDS = { # parent key?
       'user' : fields.Key,
       'collection' : fields.Key,

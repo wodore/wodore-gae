@@ -2,6 +2,7 @@
 
 from .user import *
 from .collection import *
+from .collection_user import *
 
 from .admin import *
 from .error import *

@@ -78,8 +78,6 @@ def collection_user_add(col_key=None):
   else:
     flask.abort(404)
 
-
-  #form = CollectionUserAddForm(obj=col_db)
   form = CollectionUserAddForm()
   if form.validate_on_submit():
     # get user key
@@ -96,16 +94,34 @@ def collection_user_add(col_key=None):
       active = True
 
     model.Collection.add_users(col_key,user_keys,permission=form.permission.data,active=active)
-    #if update:
-      #form.populate_obj(col_db)
-      #col_db.put()
-    #else:
-      #model.Collection.create(form.name.data,auth.current_user_key(),\
-          #description=form.description.data, \
-          #active=form.active.data, public=form.public.data)
     return flask.redirect(flask.url_for(
         'collection_user_list', order='-modified', collection=col_key.urlsafe()
         ))
+
+  return flask.render_template(
+      'collection/collection_user_add.html',
+      title=col_db.name or 'Add New User to Collection',
+      html_class='collection-user-add',
+      form=form,
+      col_key=col_key,
+      col_db=col_db,
+      api_url=None#flask.url_for('api.user', col_key=col_db.key.urlsafe()) if col_db.key else ''
+    )
+
+@app.route('/admin/collection/user/<col_key>/remove/<user_key>', methods=['GET', 'POST'])
+@auth.admin_required
+def collection_remove_add(col_key=None,user_key=None):
+  if col_key and user_key:
+    col_key = ndb.Key(urlsafe=col_key)
+    user_key = ndb.Key(urlsafe=user_key)
+    col_db = col_key.get()
+  else:
+    flask.abort(404)
+
+  model.Collection.remove_users(col_key,[user_key])
+  return flask.redirect(flask.url_for(
+      'collection_user_list', order='-modified', collection=col_key.urlsafe()
+      ))
 
   return flask.render_template(
       'collection/collection_user_add.html',

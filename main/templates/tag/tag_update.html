@@ -1,0 +1,44 @@
+# extends 'base.html'
+# import 'macro/forms.html' as forms
+# import 'macro/utils.html' as utils
+
+# block content
+  <div class="page-header">
+    <h1>
+      {{utils.back_link('Back to tag list', 'tag_list', order='-cnt')}}
+      {{title}}
+    </h1>
+  </div>
+  <form method="POST" action="." enctype="multipart/form-data" novalidate>
+    <div class="row">
+      <div class="col-md-4 col-sm-6">
+        {{form.csrf_token}}
+        {{forms.text_field(form.name, autofocus=True)}}
+        {{forms.text_field(form.color)}}
+        {{forms.input_field(form.icon, multiple="")}}
+        <div> --- or --- </div>
+        {{forms.text_field(form.icon_key)}}
+      </div>
+      <div class="col-md-2 col-sm-6">
+        <div class="form-group">
+          <label class="control-label">Icon</label>
+          <div>
+            ##<img class="img-thumbnail" src="{{user_db.avatar_url_size(170)}}" alt="Avatar of {{user_db.name}}">
+          </div>
+        </div>
+      </div>
+    </div>
+    <hr>
+    <div class="row">
+      <div class="col-md-6 col-md-offset-3">
+        <button type="submit" class="btn btn-primary btn-lg btn-block btn-loading" {{forms.data_loading_text()}}>
+          # if true
+            Update
+          # else
+            Create
+          # endif
+        </button>
+      </div>
+    </div>
+  </form>
+# endblock

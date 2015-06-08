@@ -224,3 +224,14 @@ class Iconize(ndb.Model): # use the counter mixin
       Icon.remove(self.icon.icon_key)
       del self.icon
 
+## TODO write test
+  def get_icon_key(self):
+    if getattr(self,'icon',None):
+      return self.icon.icon_key
+    elif getattr(self,'toplevel',None):
+      top_db = self.toplevel.get()
+      if getattr(top_db,'icon',None):
+        return top_db.icon.icon_key
+    else:
+      None
+

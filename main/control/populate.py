@@ -281,6 +281,8 @@ def admin_populate_waypoint():
         db = model.WayPoint(name=name,collection=key.urlsafe(),geo=geo)
         if tag_list:
           tag_nr = int(random.random()*form_waypoint.max_tags.data)
+          while tag_nr > len(tag_list):
+            tag_nr -=1
           db.add_tags(random.sample(tag_list,tag_nr))
         dbs.append(db)
         cnt += 1

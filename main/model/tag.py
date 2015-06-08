@@ -62,6 +62,16 @@ class Tag(Iconize, CountableLazy, model.Base):
     return TagStructure(name=self.name,icon=getattr(self,'icon',None) \
         ,color=self.color)
 
+  def related(self,limit=5):
+    dbs, _ = model.TagRelation.get_dbs(tag_name=self.name,\
+        collection=self.collection,limit=limit+1,\
+        order='-cnt')
+    if len(dbs) > limit:
+      more = True
+    else:
+      more = False
+    return dbs[:-2], more
+
   @staticmethod
   def tag_to_keyname(name,collection=None):
     """Returns a key name (string)"""
@@ -161,6 +171,21 @@ class Tag(Iconize, CountableLazy, model.Base):
     #else filter for private True and False
     return qry
 
+  @classmethod
+  def get_dbs(
+      cls, name=None, color=None, approved=None, collection=None,
+      toplevel=None, **kwargs
+    ):
+    return super(Tag, cls).get_dbs(
+        name=name or util.param('name', str),
+        color=color or util.param('color', str),
+        approved=approved or util.param('approved', bool),
+        collection=collection or util.param('collection', str),
+        toplevel=toplevel or util.param('toplevel', ndb.Key),
+        **kwargs
+      )
+
+
   @staticmethod
   def print_list(dbs):
     print "\n+-------------------+-------------------+-------------------"\
@@ -181,7 +206,7 @@ class Tag(Iconize, CountableLazy, model.Base):
     print
     print
 
-class TagRelation(CountableLazy, ndb.Model): # use the counter mixin
+class TagRelation(CountableLazy, model.Base): # use the counter mixin
   """Tag relation model
   Saves all relation between tags with a counter.
   Can be used for tag suggestions.
@@ -192,8 +217,8 @@ class TagRelation(CountableLazy, ndb.Model): # use the counter mixin
   related_to = ndb.StringProperty(indexed=True,required=True)
   collection = ndb.StringProperty(indexed=True,required=True,default='global')
   toplevel = ndb.KeyProperty()
-  created = ndb.DateTimeProperty(auto_now_add=True)
-  modified = ndb.DateTimeProperty(auto_now=True)
+  #created = ndb.DateTimeProperty(auto_now_add=True)
+  #modified = ndb.DateTimeProperty(auto_now=True)
 
   @staticmethod
   def to_keyname(tag_name,related_to,collection=None):
@@ -329,7 +354,18 @@ class TagRelation(CountableLazy, ndb.Model): # use the counter mixin
     print
     print
 
-
+  @classmethod
+  def get_dbs(
+      cls, tag_name=None, related_to=None, collection=None,
+      toplevel=None, **kwargs
+    ):
+    return super(TagRelation, cls).get_dbs(
+        tag_name=tag_name or util.param('tag_name', str),
+        related_to=related_to or util.param('related_to', bool),
+        collection=collection or util.param('collection', str),
+        toplevel=toplevel or util.param('toplevel', ndb.Key),
+        **kwargs
+      )
 
 
 class Taggable(ndb.Model): # use the counter mixin

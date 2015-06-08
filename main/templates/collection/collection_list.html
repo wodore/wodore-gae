@@ -76,7 +76,9 @@
               <span class=small>{{col_db.key.urlsafe()}}</span>
             </td>
             <td>
-              <span >{{col_db.count}}</span>
+              <a href="{{url_for('collection_user_list',collection=col_db.key.urlsafe(),order='-modified' )}}" class="">
+                {{col_db.count}} <span class="fa fa-link"></span>
+              </a>
             </td>
           </tr>
         # endfor

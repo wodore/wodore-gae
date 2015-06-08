@@ -6,10 +6,19 @@
 # endblock
 
 # block admin_content
+
+  # if col_db
+  <h2>{{col_db.name}} <br>
+    <small>{{col_db.description}}</small></h2>
+  # endif
+
+
   <div class="panel panel-default">
     <div class="panel-body">
-      <a class="btn btn-sm btn-primary" href="{{url_for('collection_update')}}">
-        <span class="fa fa-fw fa-user-plus"></span> New Collection
+  # if col_db
+      <a class="btn btn-sm btn-primary" href="/admin/collection/user/{{col_db.key.urlsafe()}}/add/">
+        <span class="fa fa-fw fa-user-plus"></span> Add User
+  # endif
       </a>
 
       <div class="btn-group btn-group-sm">
@@ -22,15 +31,23 @@
       </div>
 
       <div class="btn-group btn-group-sm">
-        <button type="button" class="btn btn-success" disabled>Public</button>
-        {{utils.filter_by_link('public', True, 'thumbs-o-up')}}
-        {{utils.filter_by_link('public', False, 'thumbs-o-down')}}
+        <button type="button" class="btn btn-success" disabled>Active</button>
+        {{utils.filter_by_link('active', True, 'thumbs-o-up')}}
+        {{utils.filter_by_link('active', False, 'thumbs-o-down')}}
       </div>
 
       <div class="btn-group btn-group-sm">
-        <button type="button" class="btn btn-info" disabled>Active</button>
-        {{utils.filter_by_link('active', True, 'thumbs-o-up')}}
-        {{utils.filter_by_link('active', False, 'thumbs-o-down')}}
+        <button type="button" class="btn btn-info" disabled>Permission</button>
+        {{utils.filter_by_link('permission', 'creator' )}}
+        {{utils.filter_by_link('permission', 'admin' )}}
+        {{utils.filter_by_link('permission', 'write' )}}
+        {{utils.filter_by_link('permission', 'read' )}}
+        {{utils.filter_by_link('permission', 'none' )}}
+      </div>
+      <div class="btn-group btn-group-sm">
+        <a href="{{url_for('collection_user_list', order='-modified')}}" class="btn btn-primary" role="button" title="Remove all filters">
+          No Filter
+        </a>
       </div>
     </div>
   </div>
@@ -44,30 +61,40 @@
     <table class="table table-bordered table-hover">
       <thead>
         <tr class="text-nowrap">
-          <th class="col-xs-4"><input id="select-all" type="checkbox"> {{utils.order_by_link('collection', 'Collection')}}</th>
+          <th class="col-xs-2">{{utils.order_by_link('user_name', 'Name')}}<br><small>{{utils.order_by_link('user_username', 'Username')}}</small></th>
+          <th class="col-xs-2">{{utils.order_by_link('user_email', 'E-Mail')}}</th>
+          <th class="col-xs-2">{{utils.order_by_link('permission', 'Permission')}}</th>
           <th class="col-xs-2">{{utils.order_by_link('modified', 'Modified')}}<br><small>{{utils.order_by_link('created', 'Created')}}</small></th>
-          <th class="text-center" title="Key"><span class="fa fa-key"></span></th>
-          <th class="text-center" title="User"><span class="fa fa-user"></span></th>
+          <th class="col-xs-4">{{utils.order_by_link('collection', 'Collection Key')}}</th>
+          <th class="col-xs-1"><input id="select-all" type="checkbox"></th>
         </tr>
       </thead>
       <tbody>
         # for db in col_usr_dbs
-          <tr id="{{db.key.urlsafe()}}" class="row-link {{'text-muted' if not db.active}}" data-href="{{url_for('collection_update', col_key=db.key.urlsafe())}}">
-            <td class="name">
-              <label class="not-link">
-                <input type="checkbox" name="db" value="{{db.key.urlsafe()}}">
-              </label>
-              <span>{{db.collection.urlsafe()}}</span>
+          ##<tr id="{{db.key.urlsafe()}}" class="row-link {{'text-muted' if not db.active}}" data-href="{{url_for('collection_update', col_key=db.key.urlsafe())}}">
+            <td>
+              <a href="{{update_query_argument('user_username', db.user_username)}}" class="">
+                <span class="fa fa-filter"></span>
+              </a> 
+              {{db.user_name}}
               # if current_user.id == db.user.id()
                 <span class="fa fa-hand-o-left" title="You"></span>
               # endif
-              <br>
+                <br>
               <span class=small>
-                <a href="{{update_query_argument('collection', db.collection.urlsafe())}}" class="">
-                  filter <span class="fa fa-link"></span>
-                </a>
+                  {{db.user_username}}
               </span>
             </td>
+            <td>
+                {{db.user_email}}
+            </td>
+            <td class="not-link">
+              <a href="{{update_query_argument('permission', db.permission)}}" class="label label-info">{{db.permission}}</a>
+              # if not db.active
+                <a href="{{update_query_argument('active', False)}}" class="label label-default"><span class="fa fa-ban"></span> inactive</a>
+              # endif
+            </td>
+
             <td>
               <time datetime="{{db.modified}}">
                 {{db.modified.strftime('%Y-%m-%d')}}
@@ -76,20 +103,17 @@
                 {{db.created.strftime('%Y-%m-%d')}}
               </time>
             </td>
-            <td>
-              <a href="{{update_query_argument('user_name', db.user_name)}}" class="">
-                {{db.user_name}} <span class="fa fa-link"></span>
-              </a><br>
-              <span class=small>
-                <a href="{{update_query_argument('user_username', db.user_username)}}" class="">
-                  {{db.user_username}} <span class="fa fa-link"></span>
-                </a>
-              </span>
+            <td class="name">
+              <a href="{{update_query_argument('collection', db.collection.urlsafe())}}" class="">
+                <span class="fa fa-filter"></span>
+              </a>
+              <span class='small'>{{db.collection.urlsafe()}}</span>
+              <br>
             </td>
             <td>
-              <a href="{{update_query_argument('user_email', db.user_email)}}" class="">
-                {{db.user_email}} <span class="fa fa-link"></span>
-              </a>
+              <label class="not-link">
+                <input type="checkbox" name="db" value="{{db.key.urlsafe()}}">
+              </label>
             </td>
           </tr>
         # endfor

@@ -23,8 +23,10 @@ from main import app
 @app.route('/icon/<icon_key>')
 @auth.login_required
 def show_icon(icon_key):
-  print icon_key
-  return ndb.Key(urlsafe=icon_key).get().icon.data
+  #print icon_keyy
+  response = flask.make_response(ndb.Key(urlsafe=icon_key).get().icon.data)
+  response.content_type = 'image/svg+xml'
+  return response
 
 ###############################################################################
 # Icon List

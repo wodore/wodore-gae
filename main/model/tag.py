@@ -62,15 +62,37 @@ class Tag(Iconize, CountableLazy, model.Base):
     return TagStructure(name=self.name,icon=getattr(self,'icon',None) \
         ,color=self.color)
 
-  def related(self,limit=5):
-    dbs, _ = model.TagRelation.get_dbs(tag_name=self.name,\
-        collection=self.collection,limit=limit+1,\
+  def related(self,char_limit=15,word_limit=None,char_space=4):
+
+    word_limit = word_limit or int(char_limit/5)+3
+    dbs, cursor = model.TagRelation.get_dbs(tag_name=self.name,\
+        collection=self.collection,limit=word_limit,\
         order='-cnt')
-    if len(dbs) > limit:
-      more = True
-    else:
-      more = False
-    return dbs[:-2], more
+    # count chars
+    char_cnt = 0
+    out = False
+    more=False
+    new_dbs = []
+    for db in dbs:
+      if out:
+        more=True
+        break
+      char_cnt += len(db.related_to) + char_space
+      if char_cnt > char_limit:
+        out=True
+      new_dbs.append(db)
+    if char_cnt > char_limit+int(char_space*2):
+      del new_dbs[-1]
+
+    #if len(dbs) > word_limit:
+      #more = True
+    #else:
+      #more = False
+    #print char_cnt
+    #if more and char_cnt > char_limit:
+      #return dbs[:-2], more
+    #else:
+    return new_dbs, more
 
   @staticmethod
   def tag_to_keyname(name,collection=None):

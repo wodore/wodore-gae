@@ -52,7 +52,9 @@
     <table class="table table-bordered table-hover">
       <thead>
         <tr class="text-nowrap">
-          <th class="col-xs-4"><input id="select-all" type="checkbox"> {{utils.order_by_link('name', 'Tag')}} <br>   
+          <th class="col-xs-4">
+##<input id="select-all" type="checkbox"> 
+            {{utils.order_by_link('name', 'Tag')}} <br>   
             <small>{{utils.order_by_link('color', 'Color')}}</small></th>
           <th class="col-xs-2">{{utils.order_by_link('modified', 'Modified')}}<br><small>{{utils.order_by_link('created', 'Created')}}</small></th>
           <th class="col-xs-1" title="Icon"><span class="fa fa-picture-o"></span></th>
@@ -62,15 +64,21 @@
       </thead>
       <tbody>
         # for db in tag_dbs
-          <tr id="{{db.key.urlsafe()}}" class="row-link {{'text-muted' if not db.active}}" data-href="{{url_for('collection_update', col_key=db.key.urlsafe())}}">
+          <tr id="{{db.key.urlsafe()}}" class="{{'text-muted' if not db.active}}" >
             <td class="name">
               ##<label class="not-link">
                 ##<input type="checkbox" name="db" value="{{db.key.urlsafe()}}">
               ##</label>
-            <span class="label label-warning" style="background-color:{{db.color}}">{{db.name}}</span>
-            # set rel_dbs, more = db.related(5)
+            <a class="label label-info" 
+              href="{{url_for('tag_update',collection=db.collection,tag=db.name)}}"
+              style="background-color:{{db.color}}">
+            <span>{{db.name}}</span>
+            </a>&nbsp;
+            # set rel_dbs, more = db.related(20)
             # for rel_db in rel_dbs
-            <span class="label label-info" >{{rel_db.related_to}}</span>
+            <a class="label label-info" 
+              href="{{url_for('tag_update',collection=db.collection,tag=rel_db.related_to)}}">
+              <span>{{rel_db.related_to}}<span></a>&nbsp;
             # endfor
             # if more
             <span class="label label-default" >...</span>
@@ -89,12 +97,11 @@
             <td>
               # set icon=db.get_icon_key()
               # if icon
-              <a href="/icon/{{icon.urlsafe()}}" target="_blank">
+              <a href="/icon/{{icon.urlsafe()}}" target="_blank" style="display: block;">
                 <object type="image/svg+xml" data="/icon/{{icon.urlsafe()}}" class="icon"
-                style="width:60px;height:60px;"  >
+                style="width:30px;height:30px;pointer-events: none;"   >
                   <span class="label label-warning">No SVG support<span> <!-- fallback image in CSS -->
                 </object>
-                <small>open</small>
               </a>
               # else
               <span class=small>add icon</span>

@@ -13,26 +13,72 @@
     <div class="row">
       <div class="col-md-4 col-sm-6">
         {{form.csrf_token}}
-        {{forms.text_field(form.name, autofocus=True)}}
+        # if tag_db 
+        <h3><span class="label label-warning" 
+            style="background-color:{{tag_db.color}}">{{tag_db.name}}</span></h3>
+        <div class="hidden">{{forms.text_field(form.name)}}</div>
+        # if col_db
+        <h4>{{col_db.name}}</h4>
+        <p class="text-info">{{col_db.description}}</p>
+        #else
+        <h4><span class="fa fa-globe"> global </span></h4>
+        # endif
+        # else
+          {{forms.text_field(form.name, autofocus=True)}}
+        # endif
         {{forms.text_field(form.color)}}
         {{forms.input_field(form.icon, multiple="")}}
         <div> --- or --- </div>
         {{forms.text_field(form.icon_key)}}
+
+        {{forms.checkbox_field(form.force_icon)}}
+        {{forms.checkbox_field(form.incr_counter)}}
       </div>
       <div class="col-md-2 col-sm-6">
         <div class="form-group">
           <label class="control-label">Icon</label>
-          <div>
+          <div class="img-thumbnail">
             ##<img class="img-thumbnail" src="{{user_db.avatar_url_size(170)}}" alt="Avatar of {{user_db.name}}">
+            # if tag_db
+              # set icon=tag_db.get_icon_key()
+              # if icon
+              <a href="/icon/{{icon.urlsafe()}}" target="_blank" display: block;>
+                <object type="image/svg+xml" data="/icon/{{icon.urlsafe()}}" 
+                  class=""
+                  style="width:160px;height:160px;" >
+                  <span class="label label-warning">
+                    No SVG support
+                  <span> <!-- fallback image in CSS -->
+                </object><br>
+               <small class="test-info">open</small>
+              </a>
+              # else
+              <span class=small>add icon</span>
+              # endif
+            # endif
           </div>
         </div>
+      </div>
+      <div class="col-md-6 col-sm-6">
+          # if tag_db
+            <h3> Related </h3>
+            # set rel_dbs, more = tag_db.related(500,50)
+            # for rel_db in rel_dbs
+            <a class="label label-info" 
+              href="{{url_for('tag_update',collection=tag_db.collection,tag=rel_db.related_to)}}">
+              <span>{{rel_db.related_to}}<span></a>&nbsp;
+            # endfor
+            # if more
+            <span class="label label-default" >...</span>
+            # endif
+          # endif
       </div>
     </div>
     <hr>
     <div class="row">
       <div class="col-md-6 col-md-offset-3">
         <button type="submit" class="btn btn-primary btn-lg btn-block btn-loading" {{forms.data_loading_text()}}>
-          # if true
+          # if tag_db
             Update
           # else
             Create

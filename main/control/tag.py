@@ -64,21 +64,38 @@ class TagUpdateForm(wtf.Form):
       "Icon Key",
       [wtforms.validators.optional()])
 
+  force_icon = wtforms.BooleanField("Force new icon",default=False)
+  incr_counter = wtforms.BooleanField("Increase counter",default=False)
+
   def __init__(self, *args, **kwds):
     super(TagUpdateForm, self).__init__(*args, **kwds)
 
 
-@app.route('/admin/tag/<col_key>/update/', methods=['GET', 'POST'])
+@app.route('/admin/tag/<collection>/update/<tag>', methods=['GET', 'POST'])
+@app.route('/admin/tag/<collection>/update/', methods=['GET', 'POST'])
+@app.route('/admin/tag/update/<tag>', methods=['GET', 'POST'])
 @app.route('/admin/tag/update/', methods=['GET', 'POST'])
 @auth.admin_required
-def tag_update(col_key=None):
-  if col_key and col_key!='global':
-    col_db = ndb.Key(urlsafe=col_key).get()
+def tag_update(collection=None, tag=None):
+  collection = collection or util.param('collection')
+  tag = tag or util.param('tag')
+  if collection and collection!='global':
+    col_db = ndb.Key(urlsafe=collection).get()
   else:
-    col_key = 'global'
+    collection = 'global'
     col_db = None
+  if tag:
+    tag_db = model.Tag.tag_to_key(tag,collection).get()
+  else:
+    tag_db = None
 
-  form = TagUpdateForm()
+
+  form = TagUpdateForm(obj=tag_db)
+  print "UPDATE TAG"
+  print tag
+  print "form valide on submit"
+  print form.validate_on_submit()
+
   if form.validate_on_submit():
     if form.icon.data:
       fs = flask.request.files.getlist("icon")
@@ -98,8 +115,10 @@ def tag_update(col_key=None):
     else:
       icon_key = None
 
-    model.Tag.add(form.name.data,collection=col_key,icon_key=icon_key,
-      icon_structure=icon_struct,color=form.color.data)
+    model.Tag.add(form.name.data,collection=collection,icon_key=icon_key,
+      icon_structure=icon_struct,color=form.color.data,
+      force_new_icon=form.force_icon.data,
+      auto_incr=form.incr_counter.data)
 
     # get user key
     return flask.redirect(flask.url_for(
@@ -108,11 +127,12 @@ def tag_update(col_key=None):
 
   return flask.render_template(
       'tag/tag_update.html',
-      title=col_db or 'Add New Tag',
+      title= "Update Tag" if tag_db else "Add New Tag" ,#col_db or 'Add New Tag',
       html_class='tag-update',
       form=form,
-      col_key=col_key,
+      collection=collection,
       col_db=col_db,
+      tag_db=tag_db,
       api_url=None#flask.url_for('api.user', col_key=col_db.key.urlsafe()) if col_db.key else ''
     )
   # TODO

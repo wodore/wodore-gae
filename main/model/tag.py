@@ -142,7 +142,7 @@ class Tag(Iconize, CountableLazy, model.Base):
       if icon_key:
         tag_db.add_icon(icon_key)
       elif icon_structure:
-        tag_db.create_icon(icon_structure,name)
+        tag_db.create_icon(icon_structure,name.lower())
     if color:
       tag_db.color = color
     return tag_db.put()

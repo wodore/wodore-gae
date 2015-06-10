@@ -135,29 +135,4 @@ def tag_update(collection=None, tag=None):
       tag_db=tag_db,
       api_url=None#flask.url_for('api.user', col_key=col_db.key.urlsafe()) if col_db.key else ''
     )
-  # TODO
-@app.route('/admin/collection/user/<col_key>/remove/<tag_key>', methods=['GET', 'POST'])
-@auth.admin_required
-def tag_remove(col_key=None,tag_key=None):
-  if col_key and user_key:
-    col_key = ndb.Key(urlsafe=col_key)
-    user_key = ndb.Key(urlsafe=user_key)
-    col_db = col_key.get()
-  else:
-    flask.abort(404)
-
-  model.Collection.remove_users(col_key,[user_key])
-  return flask.redirect(flask.url_for(
-      'collection_user_list', order='-modified', collection=col_key.urlsafe()
-      ))
-
-  return flask.render_template(
-      'collection/collection_user_add.html',
-      title=col_db.name or 'Add New User to Collection',
-      html_class='collection-user-add',
-      form=form,
-      col_key=col_key,
-      col_db=col_db,
-      api_url=None#flask.url_for('api.user', col_key=col_db.key.urlsafe()) if col_db.key else ''
-    )
 

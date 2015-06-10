@@ -122,6 +122,20 @@ class Icon(CountableLazy, model.Base):
     icon_db.decr()
     icon_db.put()
 
+  def get_tags(self,limit=10):
+    """Fetches tags which are used together with this icon
+
+    returns a tag dbs and a variable more if more tags are available."""
+#TODO write test
+    dbs = model.Tag.query(model.Tag.icon.icon_key==self.key)\
+        .order(-model.Tag.cnt).fetch(limit+1)
+    if len(dbs) > limit:
+      more = True
+    else:
+      more = False
+    return dbs, more
+
+
 
   @classmethod
   def qry(cls, toplevel=None, name=None, collection=None, private=False,
@@ -159,7 +173,7 @@ class Icon(CountableLazy, model.Base):
       cls, name=None, collection=None, private=None, toplevel=None, \
           replaced_by=None, **kwargs
     ):
-    return super(User, cls).get_dbs(
+    return super(Icon, cls).get_dbs(
         name=name or util.param('name', None),
         collection=collection or util.param('collection', None),
         private=private or util.param('private', bool),

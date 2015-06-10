@@ -1,0 +1,153 @@
+# extends 'admin/admin_base.html'
+# import 'macro/utils.html' as utils
+
+# block head
+  {{utils.prefetch_link(next_url)}}
+# endblock
+
+# block admin_content
+
+
+  # if col_db
+  <h2>{{col_db.name}} <br>
+    <small>{{col_db.description}}</small></h2>
+  # endif
+
+
+  <div class="panel panel-default">
+    <div class="panel-body">
+      <a class="btn btn-sm btn-primary" href="{{url_for('waypoint_update')}}">
+        <span class="fa fa-fw fa-user-plus"></span> New Waypoint
+      </a>
+
+      <div class="btn-group btn-group-sm">
+        <button type="button" class="btn btn-primary" disabled>Limit</button>
+        {{utils.filter_by_link('limit', 16)}}
+        {{utils.filter_by_link('limit', 64)}}
+        {{utils.filter_by_link('limit', 128)}}
+        {{utils.filter_by_link('limit', 512)}}
+        {{utils.filter_by_link('limit', 1024)}}
+      </div>
+
+      <div class="btn-group btn-group-sm">
+        <button type="button" class="btn btn-success" disabled>Public</button>
+        {{utils.filter_by_link('public', True, 'thumbs-o-up')}}
+        {{utils.filter_by_link('public', False, 'thumbs-o-down')}}
+      </div>
+
+      <div class="btn-group btn-group-sm">
+        <button type="button" class="btn btn-info" disabled>Active</button>
+        {{utils.filter_by_link('active', True, 'thumbs-o-up')}}
+        {{utils.filter_by_link('active', False, 'thumbs-o-down')}}
+      </div>
+    </div>
+  </div>
+
+<div class="panel panel-default {{'hide' if pt_dbs|count == 0}}">
+  <div class="panel-heading">
+    <h3 class="panel-title">Map</h3>
+  </div>
+  <div class="panel-body">
+    <div id="admin-waypoint-map"></div>
+  </div>
+</div>
+
+
+
+  <div class="alert alert-warning alert-dismissable {{'hide' if pt_dbs|count > 0}}">
+    <a href="{{url_for('waypoint_list', order='-modified')}}" class="close" title="Remove all filters">&times;</a>
+    There are no users matching the filters.
+  </div>
+
+  <div class="table-responsive {{'hide' if pt_dbs|count == 0}}">
+    <table class="table table-bordered table-hover">
+      <thead>
+        <tr class="text-nowrap">
+          <th class="col-xs-4">
+##<input id="select-all" type="checkbox"> 
+            {{utils.order_by_link('name', 'Name')}} <br>   
+            <small>Tags</small></th>
+          <th class="col-xs-2">{{utils.order_by_link('modified', 'Modified')}}<br><small>{{utils.order_by_link('created', 'Created')}}</small></th>
+          <th class="col-xs-1" title="Icon"><span class="fa fa-picture-o"></span></th>
+          <th class="col-xs-1">
+            <small>
+              {{utils.order_by_link('geo.lat', 'Latidude')}}
+                <span class="fa fa-long-arrow-right"></span><br>
+              {{utils.order_by_link('geo.lon', 'Longitude')}}
+                <span class="fa fa-long-arrow-down"></span>
+            </small>
+          </th>
+          <th class="col-xs-2">{{utils.order_by_link('collection', 'Collection')}}</th>
+        </tr>
+      </thead>
+      <tbody>
+        # for db in pt_dbs
+          <tr id="{{db.key.urlsafe()}}" class="{{'text-muted' if not db.active}}" >
+            <td class="name">
+              ##<label class="not-link">
+                ##<input type="checkbox" name="db" value="{{db.key.urlsafe()}}">
+              ##</label>
+            <span>{{db.name}}</span>
+            <br>
+            <small class="text-warning">{{db.description}}</small>
+            <br>
+            ## set tag_dbs, more = db.get_tags(6)
+            # for tag in db.tags
+            <a class="label label-info"
+##style="background-color:{{tag_db.color}}"
+              href="{{url_for('tag_update',collection=db.collection,tag=tag)}}" >
+              <span>{{tag}}<span></a>&nbsp;
+            # endfor
+            # if false
+            <span class="label label-default" >...</span>
+            # endif
+              <br>
+              ##<span class="text-success small"> {{db.replaced_by.urlsafe()}} </span>
+            </td>
+            <td>
+              <time datetime="{{db.modified}}">
+                {{db.modified.strftime('%Y-%m-%d')}}
+              </time><br>
+              <time class="text-success small" datetime="{{db.created}}">
+                {{db.created.strftime('%Y-%m-%d')}}
+              </time>
+            </td>
+            <td>
+              # if false
+                # set icon=tag_dbs[0].icon_key
+                # if icon
+                <a href="/icon/{{icon.urlsafe()}}" target="_blank" style="display: block;">
+                  <object type="image/svg+xml" data="/icon/{{icon.urlsafe()}}" class="icon"
+                  style="width:30px;height:30px;pointer-events: none;"   >
+                    <span class="label label-warning">No SVG support<span> <!-- fallback image in CSS -->
+                  </object>
+                </a>
+                # else
+                <span class=small>add icon</span>
+                # endif
+              # endif
+            </td>
+            <td>
+              <small>
+              <a href="https://www.google.com/maps?q={{db.geo}}" class="" target="_blank">
+                {{db.geo.lat}}<br>
+                {{db.geo.lon}}<br>
+              </a>
+            </small>
+            <span class="fa fa-external-link"></span>
+            <span class="fa fa-globe"></span>
+            </td>
+            <td>
+              <a href="{{update_query_argument('collection', db.collection)}}" class="">
+                <span class="fa fa-filter"></span>
+              </a>
+              <span class=small>{{db.collection}}</span>
+            </td>
+          </tr>
+        # endfor
+      </tbody>
+    </table>
+  </div>
+
+  {{utils.next_link(next_url)}}
+# endblock

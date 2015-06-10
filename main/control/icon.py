@@ -14,6 +14,7 @@ import config
 import model
 import task
 import util
+import datetime
 
 from main import app
 
@@ -26,6 +27,10 @@ def show_icon(icon_key):
   #print icon_keyy
   response = flask.make_response(ndb.Key(urlsafe=icon_key).get().icon.data)
   response.content_type = 'image/svg+xml'
+#TODO caching
+  #response.headers['Cache-Control'] = 'public, max-age='+str(60*60*24) # in secs (1d)
+  #expiry_time = datetime.datetime.utcnow() + datetime.timedelta(1)
+  #response.headers["Expires"] = expiry_time.strftime("%a, %d %b %Y %H:%M:%S GMT")
   return response
 
 ###############################################################################
@@ -40,7 +45,6 @@ def icon_list():
   else:
     col_db=None
   icon_dbs, icon_cursor = model.Icon.get_dbs(collection=col_key)
-  print icon_dbs
   #permissions = list(UserUpdateForm._permission_choices)
   #permissions += util.param('permissions', list) or []
   return flask.render_template(

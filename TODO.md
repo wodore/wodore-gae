@@ -12,10 +12,15 @@ Model
 
 Control
 --------
+* Icon update
 * Re-do list views (especially the filters)
 * Add a back parameter which can be used for the back link
-* 
+* Add browser caching for icons
 
 Populate
 ---------
 * Add random icons to tags (and categories, or three different lists?)
+
+GAE-init
+--------
+* Update the newest version

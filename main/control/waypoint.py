@@ -19,26 +19,24 @@ from main import app
 
 
 ###############################################################################
-# Tag List
+# Waypoint List
 ###############################################################################
-@app.route('/admin/tag')
+@app.route('/admin/waypoint')
 @auth.admin_required
-def tag_list():
+def waypoint_list():
   col_key = util.param('collection',str)
   if col_key:
     col_db = ndb.Key(urlsafe=col_key).get()
   else:
     col_db=None
-  tag_dbs, tag_cursor = model.Tag.get_dbs(collection=col_key)
-  #permissions = list(UserUpdateForm._permission_choices)
-  #permissions += util.param('permissions', list) or []
+  pt_dbs, waypoint_cursor = model.WayPoint.get_dbs(collection=col_key)
   return flask.render_template(
-      'tag/tag_list.html',
-      html_class='tag-list',
-      title='Tag List',
-      tag_dbs=tag_dbs,
+      'waypoint/waypoint_list.html',
+      html_class='waypoint-list',
+      title='Waypoint List',
+      pt_dbs=pt_dbs,
       col_db=col_db,
-      next_url=util.generate_next_url(tag_cursor),
+      next_url=util.generate_next_url(waypoint_cursor),
       api_url=None#flask.url_for('api.Tag.list')
     )
 
@@ -46,7 +44,7 @@ def tag_list():
 ###############################################################################
 # Tag Update Form
 ###############################################################################
-class TagUpdateForm(wtf.Form):
+class WayPointUpdateForm(wtf.Form):
   name = wtforms.StringField(
       "Tag Name",
       [wtforms.validators.required()]
@@ -68,17 +66,17 @@ class TagUpdateForm(wtf.Form):
   incr_counter = wtforms.BooleanField("Increase counter",default=False)
 
   def __init__(self, *args, **kwds):
-    super(TagUpdateForm, self).__init__(*args, **kwds)
+    super(WayPointUpdateForm, self).__init__(*args, **kwds)
 
 
-@app.route('/admin/tag/<collection>/update/<tag>', methods=['GET', 'POST'])
-@app.route('/admin/tag/<collection>/update/', methods=['GET', 'POST'])
-@app.route('/admin/tag/update/<tag>', methods=['GET', 'POST'])
-@app.route('/admin/tag/update/', methods=['GET', 'POST'])
+@app.route('/admin/waypoint/<collection>/update/<waypoint>', methods=['GET', 'POST'])
+@app.route('/admin/waypoint/<collection>/update/', methods=['GET', 'POST'])
+@app.route('/admin/waypoint/update/<waypoint>', methods=['GET', 'POST'])
+@app.route('/admin/waypoint/update/', methods=['GET', 'POST'])
 @auth.admin_required
-def tag_update(collection=None, tag=None):
+def waypoint_update(collection=None, waypoint=None):
   collection = collection or util.param('collection')
-  tag = tag or util.param('tag')
+  waypoint = waypoint or util.param('waypoint')
   if collection and collection!='global':
     col_db = ndb.Key(urlsafe=collection).get()
   else:

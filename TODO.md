@@ -3,9 +3,9 @@ TODO
 
 General
 ---------
-[] Work with projections
-[] When possible work asyncron
-[] test
+* [ ] Work with projections
+* [ ] When possible work asyncron
+* [ ] test
 
 Collection
 ----------

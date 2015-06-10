@@ -4,6 +4,7 @@ $ ->
 $ -> $('html.welcome').each ->
   LOG('init welcome')
 
+
 $ -> $('html.auth').each ->
   init_auth()
 
@@ -17,3 +18,8 @@ $ -> $('html.user-merge').each ->
 
 $ -> $('html.admin-config').each ->
   init_admin_config()
+
+# custom wodore
+
+$ -> $('html.waypoint-list').each ->
+  init_waypoint_list()

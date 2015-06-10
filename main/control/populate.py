@@ -275,10 +275,12 @@ def admin_populate_waypoint():
     for key in col_keys:
       for i in range(0,form_waypoint.max_waypoints.data):
         name = fake.word()
-        lat = random.random()*180 - 90
-        lng = random.random()*360 - 180
+        desc = fake.sentence()
+# roughly switzerland
+        lat = random.random()*3+45
+        lng = random.random()*4 + 6
         geo = ndb.GeoPt(lat,lng)
-        db = model.WayPoint(name=name,collection=key.urlsafe(),geo=geo)
+        db = model.WayPoint(name=name,description=desc,collection=key.urlsafe(),geo=geo)
         if tag_list:
           tag_nr = int(random.random()*form_waypoint.max_tags.data)
           while tag_nr > len(tag_list):

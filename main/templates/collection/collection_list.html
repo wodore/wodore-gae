@@ -44,20 +44,28 @@
     <table class="table table-bordered table-hover">
       <thead>
         <tr class="text-nowrap">
-          <th class="col-xs-4"><input id="select-all" type="checkbox"> {{utils.order_by_link('name', 'Name')}}</th>
+          <th class="col-xs-4">
+##<input id="select-all" type="checkbox"> 
+            {{utils.order_by_link('name', 'Name')}}
+            <span class="">{{utils.order_by_link('cnt', '#')}}</span><br>
+            <small> Description </small> 
+          </th>
           <th class="col-xs-2">{{utils.order_by_link('modified', 'Modified')}}<br><small>{{utils.order_by_link('created', 'Created')}}</small></th>
           <th class="text-center" title="Key"><span class="fa fa-key"></span></th>
-          <th class="text-center" title="Users"><span class="fa fa-users"></span></th>
+          <th class="col-xs-1" title="Links">Links <span class="fa fa-link"></span></th>
         </tr>
       </thead>
       <tbody>
         # for col_db in col_dbs
           <tr id="{{col_db.key.urlsafe()}}" class="row-link {{'text-muted' if not col_db.active}}" data-href="{{url_for('collection_update', col_key=col_db.key.urlsafe())}}">
             <td class="name">
-              <label class="not-link">
-                <input type="checkbox" name="col_db" value="{{col_db.key.urlsafe()}}">
-              </label>
+              ##<label class="not-link">
+                ##<input type="checkbox" name="col_db" value="{{col_db.key.urlsafe()}}">
+              ##</label>
               <span>{{col_db.name}}</span>
+              <a href="{{url_for('collection_user_list',collection=col_db.key.urlsafe(),order='-modified' )}}" class="badge">
+                {{col_db.count}} 
+              </a>
               # if current_user.id == col_db.creator.id()
                 <span class="fa fa-hand-o-left" title="You"></span>
               # endif
@@ -77,7 +85,16 @@
             </td>
             <td>
               <a href="{{url_for('collection_user_list',collection=col_db.key.urlsafe(),order='-modified' )}}" class="">
-                {{col_db.count}} <span class="fa fa-link"></span>
+                <span class="fa fa-lg fa-fw fa-users"></span>
+              </a>
+              <a href="{{url_for('tag_list',collection=col_db.key.urlsafe(),order='-cnt' )}}" class="">
+                <span class="fa fa-lg fa-fw fa-tags"></span>
+              </a>
+              <a href="{{url_for('icon_list',collection=col_db.key.urlsafe(),order='-modified' )}}" class="">
+                <span class="fa fa-lg fa-fw fa-picture-o"></span>
+              </a>
+              <a href="{{url_for('waypoint_list',collection=col_db.key.urlsafe(),order='-modified' )}}" class="">
+                <span class="fa fa-lg fa-fw fa-map-marker"></span>
               </a>
             </td>
           </tr>

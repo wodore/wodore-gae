@@ -23,3 +23,7 @@ $ -> $('html.admin-config').each ->
 
 $ -> $('html.waypoint-list').each ->
   init_waypoint_list()
+
+
+$ -> $('html.waypoint-update').each ->
+  init_waypoint_update()

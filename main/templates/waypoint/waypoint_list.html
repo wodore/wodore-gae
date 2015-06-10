@@ -1,5 +1,6 @@
 # extends 'admin/admin_base.html'
 # import 'macro/utils.html' as utils
+# import 'macro/utils_tag.html' as utils_tag
 
 # block head
   {{utils.prefetch_link(next_url)}}
@@ -16,9 +17,11 @@
 
   <div class="panel panel-default">
     <div class="panel-body">
-      <a class="btn btn-sm btn-primary" href="{{url_for('waypoint_update')}}">
+  # if col_db
+      <a class="btn btn-sm btn-primary" href="{{url_for('waypoint_update', collection=col_db.key.urlsafe())}}">
         <span class="fa fa-fw fa-user-plus"></span> New Waypoint
       </a>
+  # endif
 
       <div class="btn-group btn-group-sm">
         <button type="button" class="btn btn-primary" disabled>Limit</button>
@@ -40,6 +43,13 @@
         {{utils.filter_by_link('active', True, 'thumbs-o-up')}}
         {{utils.filter_by_link('active', False, 'thumbs-o-down')}}
       </div>
+    ##<div class="btn-group btn-group-sm">
+      ##<button type="button" class="btn btn-info" disabled>Tag</button>
+      <div class="">
+      # for tag in tag_dbs
+        {{utils_tag.filter_by_link_tag('tags', tag_db=tag,is_list=True)}}
+      # endfor
+      </div>
     </div>
   </div>
 
@@ -49,9 +59,9 @@
         <h3 class="panel-title">Map <span class="fa fa-globe"></span></h3>
       </div>
     </a>
-    <div id="panel-map" class="panel-collapse collapse">
+    <div id="panel-map" class="panel-collapse ">
       <div class="panel-body map-container" style="height:350px">
-        <div id="admin-waypoint-map" class="map"></div>
+        <div id="map" class="map"></div>
       </div>
     </div>
   </div>
@@ -86,7 +96,9 @@
       </thead>
       <tbody>
         # for db in pt_dbs
-          <tr id="{{db.key.urlsafe()}}" class="{{'text-muted' if not db.active}}" >
+          <tr id="{{db.key.urlsafe()}}" class="row-link {{'text-muted' if not db.active}}" 
+             data-href="{{url_for('waypoint_update', collection=db.collection,
+             waypoint_id=db.key.id())}}" >
             <td class="name">
               ##<label class="not-link">
                 ##<input type="checkbox" name="db" value="{{db.key.urlsafe()}}">

@@ -53,6 +53,20 @@ class WayPoint(Taggable, model.Base):
     #else filter for private True and False
     return qry
 
+  @classmethod
+  def get_dbs(
+      cls, name=None, collection=None,
+      tags=None, creator=None, geo=None, **kwargs
+    ):
+    return super(WayPoint, cls).get_dbs(
+        name=name or util.param('name', str),
+        collection=collection or util.param('collection', str),
+        tags=tags or util.param('tags', list),
+        creator=creator or util.param('creator', ndb.Key),
+        geo=geo or util.param('geo', str),
+        **kwargs
+      )
+
   @staticmethod
   def print_list(dbs):
     print "\n+-------------------+-------------------+-------------------+"\
@@ -69,6 +83,8 @@ class WayPoint(Taggable, model.Base):
         +"-------------------+-------------------+-----------------------"
     print
     print
+
+
 
 # ADD them later
 #  @classmethod

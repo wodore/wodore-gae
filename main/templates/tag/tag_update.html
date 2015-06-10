@@ -66,7 +66,7 @@
             # for rel_db in rel_dbs
             <a class="label label-info" 
               href="{{url_for('tag_update',collection=tag_db.collection,tag=rel_db.related_to)}}">
-              <span>{{rel_db.related_to}}<span></a>&nbsp;
+              <span><small class="text-muted">{{rel_db.count}}</small> {{rel_db.related_to}}<span></a>&nbsp;
             # endfor
             # if more
             <span class="label label-default" >...</span>

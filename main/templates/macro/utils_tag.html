@@ -1,0 +1,29 @@
+## either give a tag_db or a label (only name)
+# macro filter_by_link_tag(property, tag_db=None, ignore='cursor', is_list=False, hash=None, label=None)
+  # set value = '%s' % tag_db.name if tag_db else label
+  # set color = tag_db.color if tag_db else 'blue'
+  <span >
+  <a href="{{update_query_argument(property, None if request.args.get(property) == value else value, ignore, is_list)}}{{'#%s' % hash if hash}}"
+     class="label label-info {{'active' if value in request.args.get(property, '').split(',')}}" rel="nofollow" style="background-color:{{color}}">
+   # if tag_db and tag_db.icon and false
+## does not look good yet TODO
+    <object type="image/svg+xml" data="/icon/{{tag_db.icon.icon_key.urlsafe()}}" class="icon"
+    style="width:14px;height:14px">
+    </object>
+   # endif
+    # if label
+      {{label}}
+    # elif tag_db
+    <small><span class="text-muted">{{tag_db.count}}</span></small>
+      {{tag_db.name}}
+    # else
+      {{value}}
+    # endif
+    # if value in request.args.get(property, '').split(',')
+      <span class="fa fa-check-circle-o"></span>
+# else
+      <span class="fa fa-circle-thin"></span>
+    # endif
+  </a>
+</span>&nbsp;
+# endmacro

@@ -8,6 +8,7 @@ import model
 import util
 import config
 from .counter import CountableLazy
+from .collection import Collection, AddCollection
 
 """
 An icon consists of two model classes:
@@ -19,7 +20,7 @@ For each icon exists a toplevel icon which can have children grouped by collecti
 Once an icon is created it should not be changed anymore.
 If one of the childrens counter is updated the topevel icon's counter is updated
 as well.
-The highest toplevel has the default collection 'global'.
+The highest toplevel has the default collection Collection.top_key().
 """
 
 
@@ -32,18 +33,18 @@ class IconStructure(ndb.Model): # use the counter mixin
   filetype = ndb.StringProperty(choices=['svg','png','external'],indexed=True,
                      default='svg', required=True)
 
-class Icon(CountableLazy, model.Base):
+class Icon(CountableLazy, AddCollection, model.Base):
   name = ndb.StringProperty(indexed=True,required=True)
   icon = ndb.StructuredProperty(IconStructure)
   private = ndb.BooleanProperty(required=True,default=False)
   #created = ndb.DateTimeProperty(auto_now_add=True)
   #modified = ndb.DateTimeProperty(auto_now=True)
   # Preferred urlsafe keys
-  collection = ndb.StringProperty(required=True, indexed=True,
-                  default='global', validator=lambda p, v: v.lower())
+  #collection = ndb.StringProperty(required=True, indexed=True,
+                  #default='global', validator=lambda p, v: v.lower())
   # Key the the parent (or toplevel) entry. If empty it is already the toplevel,
   # usually the collection 'global'
-  toplevel = ndb.KeyProperty()
+  #toplevel = ndb.KeyProperty()
   replaced_by = ndb.KeyProperty() # if the icon should not be used anymore
 
   def get_icon(self):
@@ -57,7 +58,8 @@ class Icon(CountableLazy, model.Base):
     return self.icon
 
   @classmethod
-  def create(cls,icon,name,collection='global',toplevel=None,private=False, auto=True):
+  def create(cls,icon,name,collection=Collection.top_key()
+      ,toplevel=None,private=False, auto=True):
     """ Creates and puts a new icon to the database.
     As icon is a IconStructure expected.
     Returns Icon key"""
@@ -80,7 +82,7 @@ class Icon(CountableLazy, model.Base):
 
     If the collection is different two things can happen:
 
-    1. If the key's collection is 'global' (no toplevel) or 'as_child' is true:
+    1. If the key's collection is Collection.top_key() (no toplevel) or 'as_child' is true:
        The key is assigned as toplevel.
        ('as_child' means the icon is added with key as toplevel)
 
@@ -97,9 +99,9 @@ class Icon(CountableLazy, model.Base):
       icon_db.put()
       return key
     else:
-      if collection == 'global':
+      if collection == Collection.top_key():
         return self.add(icon_db.toplevel,collection)
-      elif icon_db.collection == 'global' or as_child:
+      elif icon_db.collection == Collection.top_key() or as_child:
         toplevel = key
       else:
         toplevel = icon_db.toplevel
@@ -190,7 +192,7 @@ class Icon(CountableLazy, model.Base):
     This only works for one level, if a higher hierarchy is required it needs to be
     done manually.
     """
-    if not getattr(self,'toplevel',None) and self.collection != 'global' and auto: #\
+    if not getattr(self,'toplevel',None) and self.collection != Collection.top_key() and auto: #\
       top = Icon(icon=self.icon,name=self.name)
       top_key = top.put()
       self.toplevel = top_key
@@ -218,7 +220,7 @@ class Iconize(ndb.Model): # use the counter mixin
   def add_icon(self, key):
     """Adds an icon by key, the key is either a toplevel key or an icon key."""
     if not getattr(self,'collection',None):
-      col = 'global'
+      col = Collection.top_key()
     else:
       col = self.collection
     key = Icon.add(key,collection=col)
@@ -226,7 +228,7 @@ class Iconize(ndb.Model): # use the counter mixin
 
   def create_icon(self,icon,name,private=False):
     if not getattr(self,'collection',None):
-      col = 'global'
+      col = Collection.top_key()
     else:
       col = self.collection
     key = Icon.create(icon=icon,name=name,collection=col,private=private)

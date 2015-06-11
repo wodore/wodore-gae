@@ -141,7 +141,6 @@
   <div class="form-group {{'has-error' if field.errors}}">
     {{field.label(class='control-label')}}
     {{field_optional(field)}}
-    {{field_description(field)}}
       <div class="{{type}}">
         <div class="btn-group" data-toggle="buttons">
     # for key, value in field.choices
@@ -162,6 +161,7 @@
     # endfor
       </div>
       </div>
+    {{field_description(field)}}
     {{field_errors(field)}}
   </div>
 # endmacro

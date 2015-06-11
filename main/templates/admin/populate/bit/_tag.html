@@ -10,7 +10,7 @@
     <div id="populate_tag" class="panel-collapse collapse">
       <div class="panel-body">
         <p class="help-block">Generate tags.</p>
-        <form method="POST" action="/admin/populate/tag" novalidate>
+        <form method="POST" action="/admin/populate/tag/" novalidate>
           <div class="row">
             {{form_tag.csrf_token}}
             <div class="col-sm-12">
@@ -22,8 +22,11 @@
             <div class="col-sm-6">
               {{forms.number_field(form_tag.max_tags)}}
             </div>
-          <div class="col-sm-6">
+          <div class="col-sm-6 col-xs-6">
             {{forms.radio_icon_field(form_tag.incr,'info')}}
+          </div>
+          <div class="col-sm-6 col-xs-6">
+            {{forms.radio_icon_field(form_tag.icon,'info')}}
           </div>
           </div>
           <div class="row">

@@ -179,7 +179,7 @@ def admin_populate_collection_user():
 
 ###############################################################################
 # Tag
-@app.route('/admin/populate/tag', methods=['POST'])
+@app.route('/admin/populate/tag/', methods=['POST'])
 @auth.admin_required
 def admin_populate_tag():
   form_tag = PopulateTagForm()
@@ -194,10 +194,16 @@ def admin_populate_tag():
       tags = fake.words(nb=form_tag.max_tags.data)
     else:
       tags = form_tag.tags.data.split(', ')
+    # Are icon needed as well?
+    if form_tag.icon.data:
+      icon_keys, _ = model.Icon.get_dbs(keys_only=True,limit=2000, collection='global')
+    else:
+      icon_keys = None
     cnt = 0
     incr = True if form_tag.incr.data=='true' else False
     for tag in tags:
-      model.Tag.add(tag,auto_incr=incr)
+      icon_key = random.choice(icon_keys) if icon_keys else None
+      model.Tag.add(tag,auto_incr=incr,icon_key=icon_key)
       cnt += 1
     flask.flash('Added {nr} tags'.\
           format(nr=cnt), category='success')
@@ -411,6 +417,12 @@ class PopulateTagForm(wtf.Form):
   incr = wtforms.RadioField(u'Increment',[wtforms.validators.required()], \
       choices=[("true", "thumbs-o-up"),\
       ("false","thumbs-o-down")],default="false")
+
+  icon = wtforms.RadioField(u'Add Icon',[wtforms.validators.required()], \
+      choices=[("true", "thumbs-o-up"),\
+      ("false","thumbs-o-down")],default="false",\
+      description="Only gobal icon which already exist.")
+
 
   def __init__(self, *args, **kwds):
     super(PopulateTagForm, self).__init__(*args, **kwds)

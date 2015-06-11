@@ -51,7 +51,7 @@ def waypoint_list():
 ###############################################################################
 class WayPointUpdateForm(wtf.Form):
   name = wtforms.StringField(
-      "Tag Name",
+      "Waypoint Name",
       [wtforms.validators.required()]
     )
 
@@ -88,7 +88,7 @@ def waypoint_update(collection=None, waypoint_id=None):
   if waypoint_id:
     pt_db = model.WayPoint.get_by_id(waypoint_id)
   else:
-    pt_db = model.WayPoint()
+    pt_db = model.WayPoint(collection=collection)
 
   form = WayPointUpdateForm(obj=pt_db)
 

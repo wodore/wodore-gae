@@ -14,25 +14,39 @@ init_admin_waypoint_map = ->
 
 
 init_update_waypoint_map = ->
-  LOG "[init] update waypoint map"
-  map = init_map()
-  coord = $('#geo').val().split(',')
-
-  add_marker = (latlng, name="") ->
+  # internal add marker function
+  _add_marker = (latlng, name="") ->
     marker = L.marker(latlng, {
                       draggable:true
                   }).addTo(map)
     marker.on "dragend", (e) ->
-      LOG e
       $('#geo').val(e.target._latlng.lat+","+e.target._latlng.lng)
     return marker
 
-  if coord[0]
-    add_marker(coord)
+  LOG "[init] update waypoint map"
+
+  loc_info = overpass_query()
+  geo = $('#geo').val().split(',')
+  if geo[0]
+    map = init_map(geo,12)
+  else
+    LOG "Add new waypoint"
+    map = init_map([46.9,9],10)
+
+
+  if geo[0]
+    _add_marker(geo)
   else
     map.once "click", (e) ->
-      $('#geo').val(e.latlng.lat+","+e.latlng.lng)
-      add_marker(e.latlng)
+#map.on "click", (e) ->
+      latlng = e.latlng.lat+","+e.latlng.lng
+      $('#geo').val(latlng)
+      _add_marker(e.latlng)
+      loc_info latlng, (res) ->
+        $('#name').val(res.name)
+        $('#url').val(res.url)
+        $('#tags').val(res.tags.join())
+
 
 
 

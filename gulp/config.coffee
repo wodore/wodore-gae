@@ -11,6 +11,7 @@ config =
     "#{paths.static.ext}/bootstrap/js/collapse.js"
     "#{paths.static.ext}/bootstrap/js/dropdown.js"
     "#{paths.static.ext}/bootstrap/js/tooltip.js"
+    "#{paths.static.ext}/leaflet-layer-overpass/dist/OverPassLayer.js"
   ]
   style: [
     "#{paths.src.style}/style.less"

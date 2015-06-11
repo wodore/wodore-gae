@@ -92,6 +92,18 @@ def collection_update(col_key=None):
       api_url=None#flask.url_for('api.user', col_key=col_db.key.urlsafe()) if col_db.key else ''
     )
 
+@app.route('/admin/collection/create/global/', methods=['GET', 'POST'])
+def collection_create_global():
+  db = model.Collection.get_or_insert(model.Collection.top_keyname(),
+      name='Global Collection',
+      description='',
+      active=True,
+      public=True,
+      creator=auth.current_user_key())
+  if db:
+    return "Global DB Created"
+  else:
+    return "Something went wrong!"
 
   #
   #

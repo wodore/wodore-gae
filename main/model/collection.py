@@ -29,6 +29,16 @@ class Collection(CountableLazy, model.Base):
   public = ndb.BooleanProperty(required=True,default=False)
   creator = ndb.KeyProperty(kind="User") # default: current user key
 
+  @staticmethod
+  def top_key():
+    """ Returns key of the 'global' collection """
+    return ndb.Key('Collection','global')
+
+  @staticmethod
+  def top_keyname():
+    """ Returns key of the 'global' collection """
+    return 'global'
+
   @classmethod
   def create(cls,name,creator,description=None,public=False,active=True,):
     """ Creates and puts a new collection to the database.
@@ -345,4 +355,27 @@ class CollectionUser(model.Base):
 
 
 
+class AddCollection(ndb.Model):
+  """ Adds a collection ant toplevel properties
+  """
 
+
+  collection = ndb.KeyProperty('Collection', required=True, \
+      default=Collection.top_key())
+  toplevel = ndb.KeyProperty()
+
+  def get_collection_name(self):
+    """ Returns the name of the collection """
+    db = self.collection.get(projection=[model.Collection.name])
+    return db.name
+
+  def get_collection_info(self):
+    """ Returns the main field of the collection """
+    db = self.collection.get(projection=[model.Collection.name,
+      model.Collection.description,
+      model.Collection.creator,
+      model.Collection.active,
+      model.Collection.pubic
+      ])
+
+    return db

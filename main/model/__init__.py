@@ -8,6 +8,6 @@ from .route import Route, RouteRefStructure, RouteDrawingStructure
 from .waypoint import WayPoint
 from .tag import TagStructure, Tag, TagRelation, Taggable
 from .icon import Iconize, IconStructure, Icon
-from .collection import Collection, CollectionUser
+from .collection import Collection, CollectionUser, AddCollection
 
 #import .tags

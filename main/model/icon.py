@@ -164,14 +164,14 @@ class Icon(CountableLazy, AddCollection, model.Base):
 
   @classmethod
   def get_dbs(
-      cls, name=None, collection=None, private=None, toplevel=None, \
+      cls, name=None, private=None, \
           replaced_by=None, **kwargs
     ):
+    kwargs = cls.get_col_dbs(**kwargs)
+    kwargs = cls.get_counter_dbs(**kwargs)
     return super(Icon, cls).get_dbs(
         name=name or util.param('name', None),
-        collection=collection or util.param('collection', ndb.Key),
         private=private or util.param('private', bool),
-        toplevel=toplevel or util.param('toplevel', ndb.Key),
         replaced_by=replaced_by or util.param('replaced_by', ndb.Key),
         **kwargs
       )

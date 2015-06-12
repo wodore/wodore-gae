@@ -32,8 +32,6 @@ def waypoint_list():
   pt_dbs, waypoint_cursor = model.WayPoint.get_dbs(collection=col_key)
 # get tags
   tag_dbs, tag_cursor = model.Tag.get_dbs(collection=col_key or 'global',order='-cnt')
-  for tag in tag_dbs:
-    print tag.name
   return flask.render_template(
       'waypoint/waypoint_list.html',
       html_class='waypoint-list',

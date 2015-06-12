@@ -147,11 +147,12 @@ class Route(Taggable, AddCollection, model.Base):
 
   @classmethod
   def get_dbs(
-      cls, name=None, collection=None, geo=None, creator=None, **kwargs
+      cls, name=None,geo=None, creator=None, **kwargs
     ):
+    kwargs = cls.get_col_dbs(**kwargs)
+    kwargs = cls.get_tags_dbs(**kwargs)
     return super(User, cls).get_dbs(
         name=name or util.param('name', None),
-        collection=collection or util.param('collection', ndb.Key),
         geo=geo or util.param('geo', None),
         creater=creater or util.param('creater', ndb.Key),
         **kwargs

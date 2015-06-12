@@ -53,13 +53,13 @@ class WayPoint(Taggable, AddCollection, model.Base):
 
   @classmethod
   def get_dbs(
-      cls, name=None, collection=None,
+      cls, name=None,
       tags=None, creator=None, geo=None, **kwargs
     ):
+    kwargs = cls.get_col_dbs(**kwargs)
+    kwargs = cls.get_tag_dbs(**kwargs)
     return super(WayPoint, cls).get_dbs(
         name=name or util.param('name', str),
-        collection=collection or util.param('collection', ndb.Key),
-        tags=tags or util.param('tags', list),
         creator=creator or util.param('creator', ndb.Key),
         geo=geo or util.param('geo', str),
         **kwargs

@@ -188,20 +188,15 @@ class Tag(Iconize, CountableLazy, AddCollection, model.Base):
 
   @classmethod
   def get_dbs(
-      cls, name=None, color=None, approved=None, #collection=None, toplevel=None, col_id=None,
+      cls, name=None, color=None, approved=None,
       **kwargs
     ):
-    #col_id = col_id or  util.param('col_id')
-    #if col_id and not collection:
-      #collection = ndb.Key('Collection',col_id)
     kwargs = cls.get_col_dbs(**kwargs)
     kwargs = cls.get_counter_dbs(**kwargs)
     return super(Tag, cls).get_dbs(
         name=name or util.param('name', str),
         color=color or util.param('color', str),
         approved=approved or util.param('approved', bool),
-        #collection=collection or util.param('collection', ndb.Key),
-        #toplevel=toplevel or util.param('toplevel', ndb.Key),
         **kwargs
       )
 
@@ -376,14 +371,13 @@ class TagRelation(CountableLazy, AddCollection, model.Base): # use the counter m
 
   @classmethod
   def get_dbs(
-      cls, tag_name=None, related_to=None, collection=None,
-      toplevel=None, **kwargs
+      cls, tag_name=None, related_to=None,**kwargs
     ):
+    kwargs = cls.get_col_dbs(**kwargs)
+    kwargs = cls.get_counter_dbs(**kwargs)
     return super(TagRelation, cls).get_dbs(
         tag_name=tag_name or util.param('tag_name', str),
         related_to=related_to or util.param('related_to', bool),
-        collection=collection or util.param('collection', ndb.Key),
-        toplevel=toplevel or util.param('toplevel', ndb.Key),
         **kwargs
       )
 
@@ -516,4 +510,15 @@ class Taggable(ndb.Model): # use the counter mixin
 
     self.tags = tags
     return self.tags
+
+
+  @classmethod
+  def get_tag_dbs(
+      cls, tags=None, **kwargs
+    ):
+    """ Call this function when 'AddCollection' is used int the 'get_dbs' function.
+    """
+    tags = tags or util.param('tags',list)
+    kwargs["tags"] = tags
+    return kwargs
 

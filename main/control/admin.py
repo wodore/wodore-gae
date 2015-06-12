@@ -119,3 +119,33 @@ def admin_auth():
       form=form,
       api_url=flask.url_for('api.config'),
     )
+
+
+
+###############################################################################
+# Initialization Stuff
+###############################################################################
+class InitForm(wtf.Form):
+  pass
+
+
+@app.route('/admin/init/', methods=['GET', 'POST'])
+@auth.admin_required
+def admin_init():
+  return "Init"
+  #  config_db = model.Config.get_master_db()
+  #  form = AuthUpdateForm(obj=config_db)
+  #  if form.validate_on_submit():
+  #    form.populate_obj(config_db)
+  #    config_db.put()
+  #    reload(config)
+  #    app.config.update(CONFIG_DB=config_db)
+  #    return flask.redirect(flask.url_for('admin'))
+  #
+  #  return flask.render_template(
+  #      'admin/admin_auth.html',
+  #      title='Auth Config',
+  #      html_class='admin-auth',
+  #      form=form,
+  #      api_url=flask.url_for('api.config'),
+  #    )

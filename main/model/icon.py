@@ -37,14 +37,6 @@ class Icon(CountableLazy, AddCollection, model.Base):
   name = ndb.StringProperty(indexed=True,required=True)
   icon = ndb.StructuredProperty(IconStructure)
   private = ndb.BooleanProperty(required=True,default=False)
-  #created = ndb.DateTimeProperty(auto_now_add=True)
-  #modified = ndb.DateTimeProperty(auto_now=True)
-  # Preferred urlsafe keys
-  #collection = ndb.StringProperty(required=True, indexed=True,
-                  #default='global', validator=lambda p, v: v.lower())
-  # Key the the parent (or toplevel) entry. If empty it is already the toplevel,
-  # usually the collection 'global'
-  #toplevel = ndb.KeyProperty()
   replaced_by = ndb.KeyProperty() # if the icon should not be used anymore
 
   def get_icon(self):
@@ -177,7 +169,7 @@ class Icon(CountableLazy, AddCollection, model.Base):
     ):
     return super(Icon, cls).get_dbs(
         name=name or util.param('name', None),
-        collection=collection or util.param('collection', None),
+        collection=collection or util.param('collection', ndb.Key),
         private=private or util.param('private', bool),
         toplevel=toplevel or util.param('toplevel', ndb.Key),
         replaced_by=replaced_by or util.param('replaced_by', ndb.Key),

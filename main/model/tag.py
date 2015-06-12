@@ -376,7 +376,7 @@ class TagRelation(CountableLazy, AddCollection, model.Base): # use the counter m
     return super(TagRelation, cls).get_dbs(
         tag_name=tag_name or util.param('tag_name', str),
         related_to=related_to or util.param('related_to', bool),
-        collection=collection or util.param('collection', str),
+        collection=collection or util.param('collection', ndb.Key),
         toplevel=toplevel or util.param('toplevel', ndb.Key),
         **kwargs
       )

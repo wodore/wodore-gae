@@ -7,6 +7,8 @@ General
 * When possible work asyncron
 * Check get_dbs if it is still collection=None
 * check util.param(collection, ndb.Key ?? )
+* Is it possible to use get_dbs from mixins?
+* Write get_dbs tests
 
 Init
 ------

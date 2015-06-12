@@ -5,6 +5,15 @@ General
 ---------
 * Work with projections
 * When possible work asyncron
+* Check get_dbs if it is still collection=None
+* check util.param(collection, ndb.Key ?? )
+
+Init
+------
+* Write an init function
+  - Change name to wodore
+  - Add Public/Global collection
+  - Add Tags with relation
 
 Collection
 ----------
@@ -15,11 +24,12 @@ Collection
 
 Waypoint
 ---------
-* Remove waypoints (from list)
+* Add remove waypoints (from list)
 
 Icon
 ----
 * Icon should be added to toplevel collection of not existing (?)
+  - It should work like this, check again.j
 
 Model
 ------
@@ -30,6 +40,11 @@ Model
 * Add a copyright field for `Icon`
 * Work with icon id, not urlsafe key
 
+User
+----
+* Every new user needs a private collection
+* Check if a key Key('User',e-mail) already exist
+  - Replace the keys with the correct key
 
 Control
 --------
@@ -40,7 +55,7 @@ Control
 
 Populate
 ---------
-* Add random icons to tags (and categories, or three different lists?)
+* ~~Add random icons to tags (and categories, or three different lists?)~~
 
 GAE-init
 --------

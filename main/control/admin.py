@@ -157,11 +157,16 @@ def admin_init():
       app.config.update(CONFIG_DB=config_db)
 
      # init models
-      col_db = control.collection_init()
+      col_key = control.collection_init()
       new_tags = {
           "tags_hiking_scale" : {
-                "tags" : ("t1","t2","t3","t4","t5","t6","t4-","t5-","t6-","t4+","t5+","t6+"),
+                "tags" : ("T1","T2","T3","T4","T5","T6","T4-","T5-","T6-","T4+","T5+","T6+"),
                 "color" : "orange",
+                "category" : ["level"]
+          },
+          "tags_special_scale" : {
+                "tags" : ("hangover","advanced","ohh shit","just 2 beer","just 3 beer","just a beer"),
+                "color" : "darkblue",
                 "category" : ["level"]
           },
         "tags_touren_scale" : {
@@ -176,9 +181,9 @@ def admin_init():
           },
 
         "tags_public_transport" : {
-                "tags" : ("public transport","train","bus","cable car"),
+                "tags" : ("public transport","train","bus","cable car","cable lift","ferry"),
                 "color" : "lightgreen",
-                "category" : ["waypoint"]
+                "category" : ["waypoint", "route"]
           },
         "tags_nature" : {
                 "tags" : ("peak","hill","glacier","forest","lake"),
@@ -195,10 +200,21 @@ def admin_init():
                 "color" : "brown",
                 "category" : ["waypoint", "route"]
           },
-        "tags_enternainment" : {
+        "tags_entertainment" : {
                 "tags" : ("fun","cinema","theatre"),
                 "color" : "purple",
                 "category" : ["waypoint", "route"]
+          },
+        "tags_time" : {
+                "tags" : ("winter","summer","fall","autumn","full day","half day"),
+                "color" : "cyan",
+                "category" : ["waypoint", "route"]
+          },
+        "tags_categories" : {
+         "tags" : ("skitour","hiking","advanced hiking","mountainbike","alpinism",
+                      "climbing","trail","running","snow shoes"),
+                "color" : "purple",
+                "category" : ["route"]
           }
       }
       for name in new_tags:

@@ -87,7 +87,7 @@
               <a href="{{url_for('collection_user_list',collection=col_db.key.urlsafe(),order='-modified' )}}" class="">
                 <span class="fa fa-lg fa-fw fa-users"></span>
               </a>
-              <a href="{{url_for('tag_list',collection=col_db.key.urlsafe(),order='-cnt' )}}" class="">
+              <a href="{{url_for('tag_list',col_id=col_db.key.id(),order='-cnt' )}}" class="">
                 <span class="fa fa-lg fa-fw fa-tags"></span>
               </a>
               <a href="{{url_for('icon_list',collection=col_db.key.urlsafe(),order='-modified' )}}" class="">

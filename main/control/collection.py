@@ -94,14 +94,14 @@ def collection_update(col_key=None):
 
   #@app.route('/admin/collection/create/global/', methods=['GET', 'POST'])
 def collection_init():
-  db = model.Collection.get_or_insert(model.Collection.top_keyname(),
+  key = model.Collection.create(model.Collection.top_keyname(),
       name='Public Collection',
       description='',
       active=True,
       public=True,
       creator=auth.current_user_key())
-  if db:
-    return db
+  if key:
+     return key
   else:
     return False
 

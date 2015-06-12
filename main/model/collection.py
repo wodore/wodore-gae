@@ -6,7 +6,6 @@ from google.appengine.ext import ndb
 
 # import do not work yet (for unit test)
 # add them later
-#import auth
 from api import fields
 import model
 import util
@@ -34,10 +33,24 @@ class Collection(CountableLazy, model.Base):
     """ Returns key of the 'global' collection """
     return ndb.Key('Collection','global')
 
+  @classmethod
+  def top_keyname(cls):
+    """ Returns key of the 'global' collection """
+    return cls.top_id()
+
   @staticmethod
-  def top_keyname():
+  def top_id():
     """ Returns key of the 'global' collection """
     return 'global'
+
+  @classmethod
+  def id_to_key(cls,id_str):
+    """ Returns key from a collection id """
+    if id_str.isdigit():
+      id = int(id_str)
+    else:
+      id = id_str
+    return ndb.Key('Collection',id)
 
   @classmethod
   def create(cls,name,creator,description=None,public=False,active=True,):
@@ -118,15 +131,21 @@ class Collection(CountableLazy, model.Base):
     db_col.put()
 
   @classmethod
-  def has_permission(cls,collection_key,user_key,permission='read', equal=False):
+  def has_permission(cls,collection_key,user_key,\
+    permission=None, equal=False):
     """Checks if a user has a certain permission for a collection.
 
     Possible permissions are: 'creator', 'admin, 'write', 'read', 'none'.
     The permissions on the left include the one on the right as well.
     For example: 'admin' also has 'write' permission.
     If the flag equal=True then the permission must be equal ('admin' != 'write')
+    If permission=None it returns the current permission
     """
     db_col = CollectionUser.to_key(collection_key, user_key).get()
+    if not db_col:
+      return  'none'
+    if not permission:
+      return db_col.permission
     if not equal:
       return CollectionUser.permission_to_number(db_col.permission) >= \
          CollectionUser.permission_to_number(permission)
@@ -366,16 +385,39 @@ class AddCollection(ndb.Model):
 
   def get_collection_name(self):
     """ Returns the name of the collection """
-    db = self.collection.get(projection=[model.Collection.name])
+    db = model.Collection.\
+      query(model.Collection.key==self.collection).\
+      get(projection=[model.Collection.name])
+
     return db.name
 
-  def get_collection_info(self):
+  def get_collection_basic(self):
     """ Returns the main field of the collection """
-    db = self.collection.get(projection=[model.Collection.name,
-      model.Collection.description,
+    db = model.Collection.\
+      query(model.Collection.key==self.collection).\
+      get(projection=[model.Collection.name,
       model.Collection.creator,
       model.Collection.active,
-      model.Collection.pubic
+      model.Collection.public
       ])
-
     return db
+
+  def get_collection_db(self):
+    """ Returns the collection db """
+    return self.collection.get()
+
+  def has_permission(self,permission=None, equal=False):
+    """Returns if the user has permission or wich permission.
+
+    Possible permissions are: 'creator', 'admin, 'write', 'read', 'none'.
+    The permissions on the left include the one on the right as well.
+    For example: 'admin' also has 'write' permission.
+    If the flag equal=True then the permission must be equal ('admin' != 'write')
+    If permission=None it returns the current permission
+    """
+    import auth # TODO better way??
+    usr = auth.current_user_key()
+    return model.Collection.has_permission(self.collection,usr,\
+       permission,equal)
+
+

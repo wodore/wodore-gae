@@ -165,6 +165,9 @@ class TestCollection(unittest.TestCase):
     self.assertTrue(perm)
     perm = model.Collection.has_permission(key1,ndb.Key('User','three'),'none',True)
     self.assertFalse(perm)
+    # see if permission is given back if the permission arg is ommited
+    perm = model.Collection.has_permission(key1,ndb.Key('User','three'))
+    self.assertEqual(perm, 'read')
 
 
   def test_update_collection_user(self):

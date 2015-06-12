@@ -188,18 +188,20 @@ class Tag(Iconize, CountableLazy, AddCollection, model.Base):
 
   @classmethod
   def get_dbs(
-      cls, name=None, color=None, approved=None, collection=None,
-      toplevel=None, col_id=None, **kwargs
+      cls, name=None, color=None, approved=None, #collection=None, toplevel=None, col_id=None,
+      **kwargs
     ):
-    col_id = col_id or  util.param('col_id')
-    if col_id and not collection:
-      collection = ndb.Key('Collection',col_id)
+    #col_id = col_id or  util.param('col_id')
+    #if col_id and not collection:
+      #collection = ndb.Key('Collection',col_id)
+    kwargs = cls.get_col_dbs(**kwargs)
+    kwargs = cls.get_counter_dbs(**kwargs)
     return super(Tag, cls).get_dbs(
         name=name or util.param('name', str),
         color=color or util.param('color', str),
         approved=approved or util.param('approved', bool),
-        collection=collection or util.param('collection', ndb.Key),
-        toplevel=toplevel or util.param('toplevel', ndb.Key),
+        #collection=collection or util.param('collection', ndb.Key),
+        #toplevel=toplevel or util.param('toplevel', ndb.Key),
         **kwargs
       )
 

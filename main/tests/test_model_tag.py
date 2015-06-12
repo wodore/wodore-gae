@@ -110,6 +110,29 @@ class TestTag(unittest.TestCase):
     tag1_db = key1.get()
     self.assertEqual(tag1_db.approved, True)
 
+#  def test_get_dbs_tag(self):
+#    # SEE http://flask.pocoo.org/docs/0.10/testing/
+#    key1 = model.Tag.add('one')
+#    key1a = model.Tag.add('one',self.child1)
+#    key1a = model.Tag.add('one',self.child1)
+#    key1b = model.Tag.add('one',self.child2)
+#    key1 = model.Tag.add('two')
+#    key1a = model.Tag.add('two',self.child1)
+#    dbs = model.Tag.get_dbs()
+#    model.Tag.print_list(dbs)
+#    self.assertEqual(len(dbs),5)
+#
+#
+#    tag1_db = key1.get()
+#    tag1a_db = key1a.get()
+#    tag1b_db = key1b.get()
+#    tag1bA_db = key1bA.get()
+#    self.assertEqual(tag1_db.count, 5)
+#    self.assertEqual(tag1a_db.count, 2)
+#    self.assertEqual(tag1b_db.count, 2)
+#    self.assertEqual(tag1b_db.toplevel, key1)
+#    self.assertEqual(tag1bA_db.toplevel, key1b)
+
 
 class TestTagRelation(unittest.TestCase):
   # enable the datastore stub

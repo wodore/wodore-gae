@@ -420,4 +420,15 @@ class AddCollection(ndb.Model):
     return model.Collection.has_permission(self.collection,usr,\
        permission,equal)
 
+  @classmethod
+  def get_col_dbs(
+      cls, collection=None, toplevel=None, col_id=None, **kwargs
+    ):
+    """ Call this function when 'AddCollection' is used int the 'get_dbs' function.
+    """
+    col_id = col_id or  util.param('col_id')
+    if col_id and not collection:
+      collection = ndb.Key('Collection',col_id)
+    kwargs["collection"] = collection
+    return kwargs
 

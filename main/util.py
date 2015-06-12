@@ -61,12 +61,6 @@ def get_dbs(
   limit = limit or config.DEFAULT_DB_LIMIT
   cursor = Cursor.from_websafe_string(cursor) if cursor else None
   model_class = ndb.Model._kind_map[query.kind]
-  if order:
-    for o in order.split(','):
-      if o.startswith('-'):
-        query = query.order(-model_class._properties[o[1:]])
-      else:
-        query = query.order(model_class._properties[o])
 
   for prop in filters:
     if filters.get(prop, None) is None:
@@ -74,9 +68,40 @@ def get_dbs(
     if isinstance(filters[prop], list):
       for value in filters[prop]:
         query = query.filter(model_class._properties[prop] == value)
+    if isinstance(filters[prop], dict):
+      if filters[prop]['test'] == '>':
+        query = query.filter(model_class._properties[prop] > filters[prop]['value'])
+      elif filters[prop]['test'] == '>=':
+        query = query.filter(model_class._properties[prop] >= filters[prop]['value'])
+      elif filters[prop]['test'] == '<':
+        query = query.filter(model_class._properties[prop] < filters[prop]['value'])
+      elif filters[prop]['test'] == '<=':
+        query = query.filter(model_class._properties[prop] < filters[prop]['value'])
+      elif filters[prop]['test'] == '==':
+        query = query.filter(model_class._properties[prop] == filters[prop]['value'])
+      elif filters[prop]['test'] == '!=':
+        query = query.filter(model_class._properties[prop] != filters[prop]['value'])
+      elif filters[prop]['test'] == 'IN':
+        values = filters[prop]['value']
+        if isinstance(values, list):
+          values = filters[prop]['value']
+        else:
+           values = values.split(',')
+        print values
+        query = query.filter(model_class._properties[prop].IN(values))
+        query = query.order(model_class._key)
+      query = query.order(model_class._properties[prop])
     else:
       query = query.filter(model_class._properties[prop] == filters[prop])
 
+  if order:
+    for o in order.split(','):
+      if o.startswith('-'):
+        query = query.order(-model_class._properties[o[1:]])
+      else:
+        query = query.order(model_class._properties[o])
+
+  print query
   model_dbs, next_cursor, more = query.fetch_page(
       limit, start_cursor=cursor, keys_only=keys_only,
     )

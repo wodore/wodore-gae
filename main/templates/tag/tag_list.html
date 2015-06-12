@@ -70,14 +70,14 @@
                 ##<input type="checkbox" name="db" value="{{db.key.urlsafe()}}">
               ##</label>
             <a class="label label-info" 
-              href="{{url_for('tag_update',collection=db.collection,tag=db.name)}}"
+              href="{{url_for('tag_update',collection=db.collection.urlsafe(),tag=db.name)}}"
               style="background-color:{{db.color}}">
             <span>{{db.name}}</span>
             </a>&nbsp;
             # set rel_dbs, more = db.related(20)
             # for rel_db in rel_dbs
             <a class="label label-info" 
-              href="{{url_for('tag_update',collection=db.collection,tag=rel_db.related_to)}}">
+              href="{{url_for('tag_update',collection=db.collection.urlsafe(),tag=rel_db.related_to)}}">
               <span>{{rel_db.related_to}}<span></a>&nbsp;
             # endfor
             # if more
@@ -115,10 +115,10 @@
               </a>
             </td>
             <td>
-              <a href="{{update_query_argument('collection', db.collection)}}" class="">
+              <a href="{{update_query_argument('collection', db.collection.urlsafe())}}" class="">
                 <span class="fa fa-filter"></span>
               </a>
-              <span class=small>{{db.collection}}</span>
+              <span class=small>{{db.collection.urlsafe()}}</span>
             </td>
           </tr>
         # endfor

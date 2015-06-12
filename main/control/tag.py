@@ -24,14 +24,12 @@ from main import app
 @app.route('/admin/tag')
 @auth.admin_required
 def tag_list():
-  col_key = util.param('collection',str)
+  col_key = util.param('collection',ndb.Key)
   if col_key:
-    col_db = ndb.Key(urlsafe=col_key).get()
+    col_db = col_key.get()
   else:
     col_db=None
   tag_dbs, tag_cursor = model.Tag.get_dbs(collection=col_key)
-  #permissions = list(UserUpdateForm._permission_choices)
-  #permissions += util.param('permissions', list) or []
   return flask.render_template(
       'tag/tag_list.html',
       html_class='tag-list',

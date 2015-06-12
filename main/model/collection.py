@@ -360,7 +360,7 @@ class AddCollection(ndb.Model):
   """
 
 
-  collection = ndb.KeyProperty('Collection', required=True, \
+  collection = ndb.KeyProperty(kind='Collection', required=True, \
       default=Collection.top_key())
   toplevel = ndb.KeyProperty()
 

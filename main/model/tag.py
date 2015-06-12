@@ -55,11 +55,15 @@ class Tag(Iconize, CountableLazy, AddCollection, model.Base):
         ,color=self.color)
 
   def related(self,char_limit=15,word_limit=None,char_space=4):
+    print "Related"
+    print self.name
+    print self.collection
 
     word_limit = word_limit or int(char_limit/5)+3
     dbs, cursor = model.TagRelation.get_dbs(tag_name=self.name,\
         collection=self.collection,limit=word_limit,\
         order='-cnt')
+    print dbs
     # count chars
     char_cnt = 0
     out = False
@@ -196,7 +200,7 @@ class Tag(Iconize, CountableLazy, AddCollection, model.Base):
         name=name or util.param('name', str),
         color=color or util.param('color', str),
         approved=approved or util.param('approved', bool),
-        collection=collection or util.param('collection', str),
+        collection=collection or util.param('collection', ndb.Key),
         toplevel=toplevel or util.param('toplevel', ndb.Key),
         **kwargs
       )

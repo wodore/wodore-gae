@@ -159,19 +159,52 @@ def admin_init():
      # init models
       col_db = control.collection_init()
       new_tags = {
-        "tags_hiking_scale" : ("t1","t2","t3","t4","t5","t6","t4-","t5-","t6-","t4+","t5+","t6+"),
-        "tags_touren_scale" : ("L","L+","WS-","WS","WS-","ZS-","ZS","ZS+","S-","S","S+"),
-        "tags_accomodation" : ("hotel","mountain hut","accomodation","hostel"),
-        "tags_public_transport" : ("public transport","train","bus","cable car"),
-        "tags_nature" : ("peak","hill","glacier","forest"),
-        "tags_transport" : ("parking","fuel"),
-        "tags_food_and_drink" : ("restaurant","bar","pub"),
-        "tags_enternainment" : ("fun","cinema","theatre"),
+          "tags_hiking_scale" : {
+                "tags" : ("t1","t2","t3","t4","t5","t6","t4-","t5-","t6-","t4+","t5+","t6+"),
+                "color" : "orange",
+                "category" : ["level"]
+          },
+        "tags_touren_scale" : {
+                "tags" : ("L","L+","WS-","WS","WS-","ZS-","ZS","ZS+","S-","S","S+"),
+                "color" : "darkorange",
+                "category" : ["level"]
+          },
+        "tags_accomodation" : {
+                "tags" : ("hotel","mountain hut","accomodation","hostel"),
+                "color" : "lightblue",
+                "category" : ["waypoint"]
+          },
+
+        "tags_public_transport" : {
+                "tags" : ("public transport","train","bus","cable car"),
+                "color" : "lightgreen",
+                "category" : ["waypoint"]
+          },
+        "tags_nature" : {
+                "tags" : ("peak","hill","glacier","forest","lake"),
+                "color" : "green",
+                "category" : ["waypoint","route"]
+          },
+        "tags_transport" : {
+                "tags" : ("parking","fuel"),
+                "color" : "blue",
+                "category" : ["waypoint"]
+          },
+        "tags_food_and_drink" : {
+                "tags" : ("food","restaurant","bar","pub"),
+                "color" : "brown",
+                "category" : ["waypoint", "route"]
+          },
+        "tags_enternainment" : {
+                "tags" : ("fun","cinema","theatre"),
+                "color" : "purple",
+                "category" : ["waypoint", "route"]
+          }
       }
       for name in new_tags:
-        for tag in new_tags[name]:
-          model.Tag.add(tag,auto_incr=False,approved=True)
-        keys = model.TagRelation.add(new_tags[name])
+        for tag in new_tags[name]["tags"]:
+          model.Tag.add(tag,color=new_tags[name]["color"], auto_incr=False,approved=True)
+        keys = model.TagRelation.add(new_tags[name]["tags"])
         #increase counter
         rel_dbs = []
         for rel_db in ndb.get_multi(keys):

@@ -106,7 +106,8 @@ class Tag(Iconize, CountableLazy, AddCollection, model.Base):
 
   @classmethod
   def add(cls,name,collection=None, toplevel_key=None, icon_key=None, \
-      icon_structure=None, color=None, force_new_icon=False, auto_incr=True):
+      icon_structure=None, color=None, force_new_icon=False, auto_incr=True,
+      approved=False):
     """ Add a tag, if it not exists create one.
 
     If an 'icon_strucuture' is given a new icon is created for the icon DB,
@@ -137,6 +138,7 @@ class Tag(Iconize, CountableLazy, AddCollection, model.Base):
         tag_db.create_icon(icon_structure,name.lower())
     if color:
       tag_db.color = color
+    tag_db.approved=approved
     return tag_db.put()
 
   @classmethod

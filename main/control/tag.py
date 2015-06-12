@@ -28,7 +28,6 @@ def tag_list():
   col_key = util.param('collection',ndb.Key)
   if col_id and not col_key:
     col_key = model.Collection.id_to_key(col_id)
-  print col_key
   if col_key:
     col_db = col_key.get()
   else:

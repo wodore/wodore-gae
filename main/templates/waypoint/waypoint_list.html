@@ -18,7 +18,7 @@
   <div class="panel panel-default">
     <div class="panel-body">
   # if col_db
-      <a class="btn btn-sm btn-primary" href="{{url_for('waypoint_update', collection=col_db.key.urlsafe())}}">
+      <a class="btn btn-sm btn-primary" href="{{url_for('waypoint_update', col_id=col_db.key.id())}}">
         <span class="fa fa-fw fa-user-plus"></span> New Waypoint
       </a>
   # endif
@@ -97,7 +97,7 @@
       <tbody>
         # for db in pt_dbs
           <tr id="{{db.key.urlsafe()}}" class="row-link {{'text-muted' if not db.active}}" 
-             data-href="{{url_for('waypoint_update', collection=db.collection,
+             data-href="{{url_for('waypoint_update', col_id=db.collection.id(),
              waypoint_id=db.key.id())}}" >
             <td class="name">
               ##<label class="not-link">

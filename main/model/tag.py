@@ -74,15 +74,8 @@ class Tag(Iconize, CountableLazy, AddCollection, model.Base):
       new_dbs.append(db)
     if char_cnt > char_limit+int(char_space*2):
       del new_dbs[-1]
+      more=True
 
-    #if len(dbs) > word_limit:
-      #more = True
-    #else:
-      #more = False
-    #print char_cnt
-    #if more and char_cnt > char_limit:
-      #return dbs[:-2], more
-    #else:
     return new_dbs, more
 
   @staticmethod

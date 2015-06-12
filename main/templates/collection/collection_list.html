@@ -93,7 +93,7 @@
               <a href="{{url_for('icon_list',collection=col_db.key.urlsafe(),order='-modified' )}}" class="">
                 <span class="fa fa-lg fa-fw fa-picture-o"></span>
               </a>
-              <a href="{{url_for('waypoint_list',collection=col_db.key.urlsafe(),order='-modified' )}}" class="">
+              <a href="{{url_for('waypoint_list',col_id=col_db.key.id(),order='-modified' )}}" class="">
                 <span class="fa fa-lg fa-fw fa-map-marker"></span>
               </a>
             </td>

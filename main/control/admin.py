@@ -175,7 +175,7 @@ def admin_init():
                 "category" : ["level"]
           },
         "tags_accomodation" : {
-                "tags" : ("hotel","mountain hut","accomodation","hostel"),
+                "tags" : ("hotel","alpine hut","accomodation","hostel", "tourism"),
                 "color" : "lightblue",
                 "category" : ["waypoint"]
           },

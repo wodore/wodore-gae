@@ -330,8 +330,9 @@ class AddCollection(ndb.Model):
     """
     col_id = col_id or  util.param('col_id')
     if col_id and not collection:
-      collection = ndb.Key('Collection',col_id)
+      collection = model.Collection.id_to_key(col_id)
     kwargs["collection"] = collection
+    kwargs["toplevel"] = toplevel
     return kwargs
 
 

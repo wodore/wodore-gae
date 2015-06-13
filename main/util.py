@@ -87,10 +87,9 @@ def get_dbs(
           values = filters[prop]['value']
         else:
            values = values.split(',')
-        print values
         query = query.filter(model_class._properties[prop].IN(values))
         query = query.order(model_class._key)
-      query = query.order(model_class._properties[prop])
+      query = query.order(model_class._properties[prop]) # TODO does it work?
     else:
       query = query.filter(model_class._properties[prop] == filters[prop])
 

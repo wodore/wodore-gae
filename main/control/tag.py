@@ -32,7 +32,7 @@ def tag_list():
     col_db = col_key.get()
   else:
     col_db=None
-  print col_db
+
   tag_dbs, tag_cursor = model.Tag.get_dbs(collection=col_key)
   return flask.render_template(
       'tag/tag_list.html',

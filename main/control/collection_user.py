@@ -24,11 +24,15 @@ from main import app
 @app.route('/admin/collection/user')
 @auth.admin_required
 def collection_user_list():
+  col_id = util.param('col_id')
   col_key = util.param('collection',ndb.Key)
+  if col_id and not col_key:
+    col_key = model.Collection.id_to_key(col_id)
   if col_key:
     col_db = col_key.get()
   else:
     col_db=None
+
   col_usr_dbs, col_usr_cursor = model.CollectionUser.get_dbs(collection=col_key)
   #permissions = list(UserUpdateForm._permission_choices)
   #permissions += util.param('permissions', list) or []

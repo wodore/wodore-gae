@@ -31,6 +31,9 @@ class TagStructure(ndb.Model): # use the counter mixin
   """Basic tag class
   """
   #tag_key = ndb.KeyProperty(required=False)
+  icon_id = ndb.IntegerProperty(indexed=True,required=False)
+# dont use icon strucutre any more, only link to icon
+# TODO detel icon!
   icon = ndb.StructuredProperty(IconStructure)
   name = ndb.StringProperty(indexed=True,required=True)
   color = ndb.StringProperty(indexed=True,required=True)
@@ -38,9 +41,40 @@ class TagStructure(ndb.Model): # use the counter mixin
 class Tag(Iconize, CountableLazy, AddCollection, model.Base):
   """Tag Model
   The key should have the following from: tag__{name}_{collection}"""
-  name = ndb.StringProperty(indexed=True,required=True, validator=lambda p, v: v.lower())
+
+  def _validate_tag(p,v):
+    """ Internal validate method, see below """
+    return Tag.validate_tag(v)
+
+# only names longer than 4 chars are saved as lower chars
+  name = ndb.StringProperty(indexed=True,required=True,
+    validator=_validate_tag )
+
   color = ndb.StringProperty(indexed=True,required=True,default='blue')
   approved = ndb.BooleanProperty(required=True,default=False)
+# category can be sofar: 'level', 'waypoint' , 'route'
+  category = ndb.StringProperty(indexed=True,repeated=True,\
+    choices=['level','waypoint','route'])
+  ## TODO re-do iconize (only ad icon_id)
+  icon_id = ndb.IntegerProperty(indexed=True,required=False)
+
+
+  @staticmethod
+  def validate_tag(tag):
+    """ Validates and proccesses a tag name:
+     strip it and lower it if shorther than 4 letters.
+     'tag' can also be a list with tags!
+    """
+    if not tag:
+      return None
+    if isinstance(tag,list):
+      tags = []
+      for t in tag:
+        tags.append(validate_tag(t))
+      return tags
+    return tag.lower().strip() if len(tag) > 4 else tag.strip()
+
+
 
   def get_tag(self):
     """ Returns a TagStructure.
@@ -51,9 +85,11 @@ class Tag(Iconize, CountableLazy, AddCollection, model.Base):
     #if self.key is None:
       #raise UserWarning("Key not set yet, use first 'put()' before you use this method.")
     #self.icon.icon_key = self.key
+# TODO detel icon!
     return TagStructure(name=self.name,icon=getattr(self,'icon',None) \
-        ,color=self.color)
+        ,color=self.color,icon_id=getattr(self,'icon_id'))
 
+  # TODO write tests
   def related(self,char_limit=15,word_limit=None,char_space=4):
     word_limit = word_limit or int(char_limit/5)+3
     dbs, cursor = model.TagRelation.get_dbs(tag_name=self.name,\
@@ -108,15 +144,16 @@ class Tag(Iconize, CountableLazy, AddCollection, model.Base):
     An icon can only be added once, except 'force_new_icon' is 'True'
     This method already 'put()'s the tag to the DB.
       """
+    name = cls.validate_tag(name)
     col = collection or Collection.top_key()
     #key = ndb.Key('Tag','tag_{}_{}'.format(name,col))
     #print key
     tag_db = Tag.get_or_insert(Tag.tag_to_keyname(name,col),\
-        name=name.lower(),collection=col)
+        name=name,collection=col)
     if col != Collection.top_key() and not toplevel_key:
       tag_db.toplevel = Tag.tag_to_key(name,Collection.top_key())
       top_db = Tag.get_or_insert(Tag.tag_to_keyname(name,Collection.top_key()),\
-        name=name.lower(),collection=Collection.top_key())
+        name=name,collection=Collection.top_key())
       top_db.put()
     elif toplevel_key:
       tag_db.toplevel = toplevel_key
@@ -127,7 +164,7 @@ class Tag(Iconize, CountableLazy, AddCollection, model.Base):
       if icon_key:
         tag_db.add_icon(icon_key)
       elif icon_structure:
-        tag_db.create_icon(icon_structure,name.lower())
+        tag_db.create_icon(icon_structure,name)
     if color:
       tag_db.color = color
     tag_db.approved=approved
@@ -137,6 +174,7 @@ class Tag(Iconize, CountableLazy, AddCollection, model.Base):
   def remove(cls,name,collection=None):
     """Removes a tag by its name"""
 # TODO Should it also work with a key??
+    name = cls.validate_tag(name)
     col = collection or Collection.top_key()
     tag_db = Tag.tag_to_key(name,col).get()
     if tag_db:
@@ -150,6 +188,7 @@ class Tag(Iconize, CountableLazy, AddCollection, model.Base):
   @classmethod
   def approve(cls,name,collection=None,approved=True):
     """The method approves a tag, by default only global tags need improvement"""
+    name = cls.validate_tag(name)
     col = collection or Collection.top_key()
     tag_db = Tag.tag_to_key(name,col).get()
     tag_db.approved=approved
@@ -166,7 +205,7 @@ class Tag(Iconize, CountableLazy, AddCollection, model.Base):
       qry = qry.filter(cls.toplevel==toplevel)
     if name:
       qry_tmp = qry
-      qry = qry.filter(cls.name==name.lower())
+      qry = qry.filter(cls.name==cls.validate_tag(name))
     if collection:
       qry_tmp = qry
       qry = qry.filter(cls.collection == collection)
@@ -186,8 +225,10 @@ class Tag(Iconize, CountableLazy, AddCollection, model.Base):
     ):
     kwargs = cls.get_col_dbs(**kwargs)
     kwargs = cls.get_counter_dbs(**kwargs)
+    name=name or util.param('name', str)
+    name=cls.validate_tag(name)
     return super(Tag, cls).get_dbs(
-        name=name or util.param('name', str),
+        name=name,
         color=color or util.param('color', str),
         approved=approved or util.param('approved', bool),
         **kwargs

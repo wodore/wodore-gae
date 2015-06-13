@@ -28,6 +28,11 @@
       </div>
 
       <div class="btn-group btn-group-sm">
+        <button type="button" class="btn btn-success" disabled>Private</button>
+        {{utils.filter_by_link('private', True, 'thumbs-o-up')}}
+        {{utils.filter_by_link('private', False, 'thumbs-o-down')}}
+      </div>
+      <div class="btn-group btn-group-sm">
         <button type="button" class="btn btn-info" disabled>Active</button>
         {{utils.filter_by_link('active', True, 'thumbs-o-up')}}
         {{utils.filter_by_link('active', False, 'thumbs-o-down')}}

@@ -78,7 +78,10 @@ def admin_populate_user():
           active=_return_state(form_user.active.data),
           admin=_return_state(form_user.admin.data),
           verified=_return_state(form_user.verified.data)))
-    ndb.put_multi(user_dbs)
+    keys = ndb.put_multi(user_dbs)
+    for key in keys:
+      # run the new user function
+      auth.new_user(key)
     flask.flash('Created {nr} new users'.\
           format(nr=len(user_dbs)), category='success')
   return flask.redirect(flask.url_for('admin_populate'))

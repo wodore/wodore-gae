@@ -1,5 +1,7 @@
 # extends 'admin/admin_base.html'
 # import 'macro/utils.html' as utils
+# import 'macro/utils_collection.html' as col_utils
+
 
 # block head
   {{utils.prefetch_link(next_url)}}
@@ -71,7 +73,7 @@
               ##</label>
             <span>{{db.name}}</span>
             <br>
-            <small class="text-warning">{{db.key.urlsafe()}}
+            <small class="text-info">{{db.key.id()}}</small>
             <br>
             # set tag_dbs, more = db.get_tags(6)
             # for tag_db in tag_dbs
@@ -98,7 +100,7 @@
               # if icon
               <a href="/icon/{{icon.urlsafe()}}" target="_blank" style="display: block;">
                 <object type="image/svg+xml" data="/icon/{{icon.urlsafe()}}" class="icon"
-                style="width:30px;height:30px;pointer-events: none;"   >
+                style="width:50px;height:50px;pointer-events: none;"   >
                   <span class="label label-warning">No SVG support<span> <!-- fallback image in CSS -->
                 </object>
               </a>
@@ -112,10 +114,8 @@
               </a>
             </td>
             <td>
-              <a href="{{update_query_argument('collection', db.collection)}}" class="">
-                <span class="fa fa-filter"></span>
-              </a>
-              <span class=small>{{db.collection}}</span>
+              # set col_basic = db.get_collection_basic()
+              {{col_utils.show_collection_details(col_basic,db.has_permission())}}
             </td>
           </tr>
         # endfor

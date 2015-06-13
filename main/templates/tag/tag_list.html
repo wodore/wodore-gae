@@ -1,5 +1,6 @@
 # extends 'admin/admin_base.html'
 # import 'macro/utils.html' as utils
+# import 'macro/utils_collection.html' as col_utils
 
 # block head
   {{utils.prefetch_link(next_url)}}
@@ -134,26 +135,12 @@
               <a href="{{url_for('collection_user_list',collection=db.key.urlsafe(),order='-modified' )}}" class="">
                 {{db.count}} <span class="fa fa-link"></span>
               </a>
-            </td>
-            <td>
-              <a href="{{update_query_argument('col_id', db.collection.id())}}" class="">
-                <span class="fa fa-filter"></span>
-              </a>
+             </td>
+             <td>
               # set col_basic = db.get_collection_basic()
-              <span>{{col_basic.name}}</span> <br>
-              <span class="small fa fa-key"> </span>
-              {{db.collection.id()}}<br>
-              # if col_basic.public
-              <span class="small fa fa-globe"> </span>
-              # endif
-              # if col_basic.creator.id() ==  current_user.id
-              <span class="small fa fa-user-plus"> </span>
-              # endif
-              <span class="label label-info">
-               {{db.has_permission()}}
-              </span>
-            </td>
-          </tr>
+              {{col_utils.show_collection_details(col_basic,db.has_permission())}}
+             </td>
+            </tr>
         # endfor
       </tbody>
     </table>

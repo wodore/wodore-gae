@@ -157,7 +157,7 @@ def admin_populate_collection_user():
     user_keys = model.User.query().fetch(limit=5000, keys_only=True)
     cnt = 0
     cnt_users = 0
-    for key in model.Collection.qry()\
+    for key in model.Collection.qry(private=False,public=False)\
         .fetch(keys_only=True, limit=form_col_user.max_collections.data):
       user_nr = int(form_col_user.user_min.data+\
           random.random()*(form_col_user.user_max.data-form_col_user.user_min.data))
@@ -289,7 +289,7 @@ def admin_populate_waypoint():
         lat = random.random()*3+45
         lng = random.random()*4 + 6
         geo = ndb.GeoPt(lat,lng)
-        db = model.WayPoint(name=name,description=desc,collection=key.urlsafe(),geo=geo)
+        db = model.WayPoint(name=name,description=desc,collection=key,geo=geo)
         if tag_list:
           tag_nr = int(random.random()*form_waypoint.max_tags.data)
           while tag_nr > len(tag_list):

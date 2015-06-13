@@ -1,5 +1,6 @@
 # extends 'admin/admin_base.html'
 # import 'macro/utils.html' as utils
+# import 'macro/utils_collection.html' as col_utils
 
 # block head
   {{utils.prefetch_link(next_url)}}
@@ -45,6 +46,10 @@
         {{utils.filter_by_link('permission', 'none' )}}
       </div>
       <div class="btn-group btn-group-sm">
+        <button type="button" class="btn btn-info" disabled>Only</button>
+        {{utils.filter_by_link('col_id', 'global', 'globe')}}
+      </div>
+      <div class="btn-group btn-group-sm">
         <a href="{{url_for('collection_user_list', order='-modified')}}" class="btn btn-primary" role="button" title="Remove all filters">
           No Filter
         </a>
@@ -63,9 +68,9 @@
         <tr class="text-nowrap">
           <th class="col-xs-2">{{utils.order_by_link('user_name', 'Name')}}<br><small>{{utils.order_by_link('user_username', 'Username')}}</small></th>
           <th class="col-xs-2">{{utils.order_by_link('user_email', 'E-Mail')}}</th>
-          <th class="col-xs-2">{{utils.order_by_link('permission', 'Permission')}}</th>
+          <th class="col-xs-1">{{utils.order_by_link('permission', 'Permission')}}</th>
           <th class="col-xs-2">{{utils.order_by_link('modified', 'Modified')}}<br><small>{{utils.order_by_link('created', 'Created')}}</small></th>
-          <th class="col-xs-4">{{utils.order_by_link('collection', 'Collection Key')}}</th>
+          <th class="col-xs-3">{{utils.order_by_link('collection', 'Collection')}}</th>
           <th class="col-xs-1"><input id="select-all" type="checkbox"></th>
         </tr>
       </thead>
@@ -103,12 +108,9 @@
                 {{db.created.strftime('%Y-%m-%d')}}
               </time>
             </td>
-            <td class="name">
-              <a href="{{update_query_argument('collection', db.collection.urlsafe())}}" class="">
-                <span class="fa fa-filter"></span>
-              </a>
-              <span class='small'>{{db.collection.urlsafe()}}</span>
-              <br>
+            <td>
+              # set col_basic = db.get_collection_basic()
+              {{col_utils.show_collection_details(col_basic,db.has_permission())}}
             </td>
             <td>
               <a href="/admin/collection/user/{{db.collection.urlsafe()}}/remove/{{db.user.urlsafe()}}" class="fa fa-times"></a>

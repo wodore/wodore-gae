@@ -102,7 +102,8 @@ def user_update(user_id=0):
       if auth.current_user_key() == user_db.key:
         user_db.admin = True
         user_db.active = True
-      user_db.put()
+      user_key = user_db.put()
+      auth.new_user(user_key)
       return flask.redirect(flask.url_for(
           'user_list', order='-modified', active=user_db.active,
         ))

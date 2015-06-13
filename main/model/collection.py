@@ -61,6 +61,24 @@ class Collection(CountableLazy, model.Base):
     return ndb.Key('Collection',id)
 
   @classmethod
+  def create_or_update_private(cls,creator_key=None, \
+        creator_db=None):
+    """ Creates a private collection """
+    if model.CollectionUser.update_user(\
+        user_db=creator_db, user_key=creator_key):
+      return True
+    if creator_key:
+      creator_db = creator_key.get()
+    if not creator_db:
+      return False
+    else:
+      creator_key = creator_db.key
+    return cls.create(name='Private {}'.format(creator_db.email),\
+      creator=creator_key,public=False,\
+      active=True,private=True)
+
+
+  @classmethod
   def create(cls,name,creator,description=None,public=False,\
       private=False, active=True,):
     """ Creates and puts a new collection to the database.
@@ -335,12 +353,15 @@ class CollectionUser(AddCollection, model.Base):
   user_avatar_url = ndb.StringProperty()
 
   @classmethod
-  def update_user(cls, user_key):
+  def update_user(cls, user_key=None, user_db=None):
     """Updates the user_* fields if a user changed"""
 # TODO user a tasklet for this!!
 # TODO add this to the user_update method in control/user.py
 # TODO ad user_* to qry!
-    user_db = user_key.get()
+    if user_key:
+      user_db = user_key.get()
+    else:
+      user_key = user_db.key
     if not user_db:
       return False
     # get all collections for this user
@@ -353,7 +374,9 @@ class CollectionUser(AddCollection, model.Base):
       if user_db.avatar_url:
         db.user_avatar_url = user_db.avatar_url
       dbs.append(db)
-    ndb.put_multi(dbs)
+    print "[col .py] update_user"
+    print dbs
+    return ndb.put_multi(dbs)
 
 
 

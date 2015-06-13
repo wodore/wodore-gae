@@ -2,29 +2,40 @@
 # macro show_collection_details(col_db=None, permission='none')
   ## set value = '%s' % tag_db.name if tag_db else label
   ## set color = tag_db.color if tag_db else 'blue'
+# if col_db
 # set name = col_db.name
 # set col_id = col_db.key.id()
 # set public = col_db.public
+# set private = col_db.private
 # set creator_id = col_db.creator.id()
 
 <a href="{{update_query_argument('col_id', col_db.key.id())}}" class="">
  <span class="fa fa-lg fa-filter"></span>
 </a>
 <span>{{name}}</span> <br>
-<span class="small fa fa-key"> </span>
-{{col_id}}<br>
+<span class="small fa fa-key text-info">
+{{col_id}} </span><br>
 # if col_db.public
 <span class="label label-warning">
-<span class="small fa fa-globe"> </span>
+<span class="fa fa-globe"> </span>
 public
 </span>&nbsp;
 # endif
+# if col_db.private
+<span class="label label-primary">
+<span class="fa fa-user-secret"> </span>
+private
+</span>&nbsp;
+# endif
 <span class="label label-info">
- {{permission}}
+{{permission}}
 </span>&nbsp;
 ## if creator_db ==  current_user.id
 ##<span class="small fa fa-user-plus"> </span>
 ## endif
-
+# else
+<span class="label label-danger fa fa-lg fa-exclamation-triangle">
+missing</span>
+# endif
 
 # endmacro

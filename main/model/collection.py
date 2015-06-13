@@ -282,6 +282,8 @@ class AddCollection(ndb.Model):
       model.Collection.private,
       model.Collection.public
       ])
+    if not db:
+      db = self.collection.get()
     return db
 
   def get_collection_db(self):

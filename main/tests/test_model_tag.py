@@ -64,32 +64,33 @@ class TestTag(unittest.TestCase):
     self.assertEqual(model.Tag.tag_to_key('two').get().count, 2)
 
   def test_add_tag_with_icon_structure(self):
-    icon1 = model.IconStructure(data='i')
-    key1 = model.Tag.add('one', icon_structure=icon1)
+    icon1 = 'i'
+    key1 = model.Tag.add('one', icon_data=icon1)
     tag1_db = key1.get()
-    self.assertEqual(tag1_db.icon, icon1)
+    self.assertEqual(model.Icon.get_by_id(tag1_db.icon_id).icon, icon1)
 
-    icon2 = model.IconStructure(data='o')
-    key1 = model.Tag.add('one', icon_structure=icon2)
+    icon2 = 'o'
+    key1 = model.Tag.add('one', icon_data=icon2)
     tag1_db = key1.get()
-    self.assertEqual(tag1_db.icon, icon1)
+# if not forced icon should not be overwritten
+    self.assertEqual(model.Icon.get_by_id(tag1_db.icon_id).icon, icon1)
 
-    key1 = model.Tag.add('one', icon_structure=icon2, force_new_icon=True, auto_incr=False)
+    key1 = model.Tag.add('one', icon_data=icon2, force_new_icon=True, auto_incr=False)
     tag1_db = key1.get()
-    self.assertEqual(tag1_db.icon, icon2)
+    self.assertEqual(model.Icon.get_by_id(tag1_db.icon_id).icon, icon2)
     self.assertEqual(tag1_db.count, 2)
 
   def test_add_tag_with_icon_key(self):
-    icon1 = model.IconStructure(data='i')
+    icon1 = 'i'
     icon1_db = model.Icon(icon=icon1,name='one')
     icon1_key = icon1_db.put()
     key1 = model.Tag.add('one', icon_key=icon1_key)
     tag1_db = key1.get()
-    self.assertEqual(tag1_db.icon, icon1)
+    self.assertEqual(tag1_db.icon_id, icon1_key.id())
 
 
   def test_remove_tag_with_icon(self):
-    icon1 = model.IconStructure(data='i')
+    icon1 = 'i'
     icon1_db = model.Icon(icon=icon1,name='one')
     icon1_key = icon1_db.put()
     key1 = model.Tag.add('one',icon_key=icon1_key)
@@ -293,18 +294,21 @@ class TestTaggable(unittest.TestCase):
       name = ndb.StringProperty()
 
 
-    self.icon1 = model.IconStructure(data='i1')
-    self.icon2 = model.IconStructure(data='i2')
-    self.icon3 = model.IconStructure(data='i3')
+    #self.icon1 = model.IconStructure(data='i1')
+    #self.icon2 = model.IconStructure(data='i2')
+    #self.icon3 = model.IconStructure(data='i3')
+    self.icon1 = 'i1'
+    self.icon2 = 'i2'
+    self.icon3 = 'i3'
     #self.tag1 = model.TagStructure(name='one', icon=self.icon1, color='red')
     #self.tag2 = model.TagStructure(name='Two', icon=self.icon2, color='green')
     #self.tag3 = model.TagStructure(name='Three', icon=self.icon3, color='blue')
     #self.tag4 = model.TagStructure(name='four')
     #self.tags1 = [self.tag1,self.tag2,self.tag3, self.tag4]
     # Create tags
-    model.Tag.add(name='one', icon_structure=self.icon1, color='red', auto_incr=False)
-    model.Tag.add(name='Two', icon_structure=self.icon2, color='green', auto_incr=False)
-    model.Tag.add(name='three', icon_structure=self.icon3, color='blue', auto_incr=False)
+    model.Tag.add(name='one', icon_data=self.icon1, color='red', auto_incr=False)
+    model.Tag.add(name='Two', icon_data=self.icon2, color='green', auto_incr=False)
+    model.Tag.add(name='three', icon_data=self.icon3, color='blue', auto_incr=False)
 
     self.tag1 = 'one'
     self.tag2 = 'Two'

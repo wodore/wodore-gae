@@ -62,8 +62,8 @@ class TagUpdateForm(wtf.Form):
 
   icon  = wtforms.FileField(u'Icon')
 
-  icon_key = wtforms.StringField(
-      "Icon Key",
+  icon_id = wtforms.IntegerField(
+      "Icon ID",
       [wtforms.validators.optional()])
 
   force_icon = wtforms.BooleanField("Force new icon",default=False)
@@ -99,19 +99,17 @@ def tag_update(col_id=None, tag=None):
     if form.icon.data:
       fs = flask.request.files.getlist("icon")
       if fs:
-        icon_struct = model.IconStructure(data=fs[0].read())
+        icon = data=fs[0].read()
       else:
-        icon_struct=None
+        icon=None
     else:
-      print "No Struct: no icon data"
-      icon_struct=None
-    if form.icon_key.data:
-      icon_key = ndb.Key(urlsafe=form.icon_key.data)
-    else:
-      icon_key = None
+      icon=None
+    if not form.icon_id.data:
+      #icon_id = ndb.Key(urlsafe=form.icon_key.data)
+      icon_id = None
 
-    model.Tag.add(form.name.data,collection=col_key,icon_key=icon_key,
-      icon_structure=icon_struct,color=form.color.data,
+    model.Tag.add(form.name.data,collection=col_key,icon_id=icon_id,
+      icon_data=icon,color=form.color.data,
       force_new_icon=form.force_icon.data,
       auto_incr=form.incr_counter.data)
 

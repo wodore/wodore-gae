@@ -8,7 +8,7 @@ import util
 import config
 
 from .counter import CountableLazy
-from .icon import IconStructure, Iconize
+from .icon import Iconize
 from .collection import Collection, AddCollection
 
 """
@@ -31,10 +31,10 @@ class TagStructure(ndb.Model): # use the counter mixin
   """Basic tag class
   """
   #tag_key = ndb.KeyProperty(required=False)
-  icon_id = ndb.IntegerProperty(indexed=True,required=False)
+  icon_id = ndb.IntegerProperty(indexed=True,required=True,default=0)
 # dont use icon strucutre any more, only link to icon
 # TODO detel icon!
-  icon = ndb.StructuredProperty(IconStructure)
+  #icon = ndb.StructuredProperty(IconStructure)
   name = ndb.StringProperty(indexed=True,required=True)
   color = ndb.StringProperty(indexed=True,required=True)
 
@@ -55,8 +55,6 @@ class Tag(Iconize, CountableLazy, AddCollection, model.Base):
 # category can be sofar: 'level', 'waypoint' , 'route'
   category = ndb.StringProperty(indexed=True,repeated=True,\
     choices=['level','waypoint','route'])
-  ## TODO re-do iconize (only ad icon_id)
-  icon_id = ndb.IntegerProperty(indexed=True,required=False)
 
 
   @staticmethod
@@ -86,8 +84,8 @@ class Tag(Iconize, CountableLazy, AddCollection, model.Base):
       #raise UserWarning("Key not set yet, use first 'put()' before you use this method.")
     #self.icon.icon_key = self.key
 # TODO detel icon!
-    return TagStructure(name=self.name,icon=getattr(self,'icon',None) \
-        ,color=self.color,icon_id=getattr(self,'icon_id'))
+    return TagStructure(name=self.name,\
+        color=self.color,icon_id=getattr(self,'icon_id'))
 
   # TODO write tests
   def related(self,char_limit=15,word_limit=None,char_space=4):
@@ -133,8 +131,8 @@ class Tag(Iconize, CountableLazy, AddCollection, model.Base):
     return tagnames
 
   @classmethod
-  def add(cls,name,collection=None, toplevel_key=None, icon_key=None, \
-      icon_structure=None, color=None, force_new_icon=False, auto_incr=True,
+  def add(cls,name,collection=None, toplevel_key=None, icon_data=None, \
+      icon_id=None, icon_key=None, color=None, force_new_icon=False, auto_incr=True,
       approved=False):
     """ Add a tag, if it not exists create one.
 
@@ -160,11 +158,12 @@ class Tag(Iconize, CountableLazy, AddCollection, model.Base):
     if auto_incr:
       tag_db.incr()
     # check if icon already exists
-    if not tag_db.get_tag().icon or force_new_icon:
-      if icon_key:
-        tag_db.add_icon(icon_key)
-      elif icon_structure:
-        tag_db.create_icon(icon_structure,name)
+    if not tag_db.get_tag().icon_id or force_new_icon:
+      if icon_key or icon_id:
+        key = model.Icon.id_to_key(icon_id) if icon_id else icon_key
+        tag_db.add_icon(key=key)
+      elif icon_data:
+        tag_db.create_icon(icon_data,name)
     if color:
       tag_db.color = color
     tag_db.approved=approved
@@ -179,7 +178,7 @@ class Tag(Iconize, CountableLazy, AddCollection, model.Base):
     tag_db = Tag.tag_to_key(name,col).get()
     if tag_db:
       tag_db.decr()
-      if tag_db.get_tag().icon:
+      if tag_db.get_tag().icon_id:
         tag_db.remove_icon()
       return tag_db.put()
     else:
@@ -248,7 +247,7 @@ class Tag(Iconize, CountableLazy, AddCollection, model.Base):
     for db in dbs:
       print "| {:<18}| {:<18}| {:<18}| {:<18}| {:<10}| {:<18}| {:<38}|".\
           format(db.name, db.collection, \
-          getattr(db.icon,"icon_key",""), db.color, db.count, db.approved, db.toplevel or "")
+          getattr(db.icon_id,"icon_key",""), db.color, db.count, db.approved, db.toplevel or "")
     print "+-------------------+-------------------+-------------------"\
         +"+-------------------+-----------+-------------------+"\
         +"---------------------------------------+"

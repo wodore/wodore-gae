@@ -118,15 +118,15 @@
               </time>
             </td>
             <td>
-              # set icon=db.get_icon_key()
-              # if icon
-              <a href="/icon/{{icon.urlsafe()}}" target="_blank" style="display: block;">
-                <object type="image/svg+xml" data="/icon/{{icon.urlsafe()}}" class="icon"
+              # set icon_id=db.get_icon_id()
+              # if icon_id
+              <a href="/icon/{{icon_id}}" target="_blank" style="display: block;">
+                <object type="image/svg+xml" data="/icon/{{icon_id}}" class="icon"
                 style="width:40px;height:40px;pointer-events: none;"   >
                   <span class="label label-warning">No SVG support<span> <!-- fallback image in CSS -->
                 </object>
               </a>
-              <small class="text-info">{{icon.id()}}</small>
+              <small class="text-info">{{icon_id}}</small>
               # else
               <span class=small>add icon</span>
               # endif

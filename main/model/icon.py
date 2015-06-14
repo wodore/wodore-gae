@@ -24,14 +24,14 @@ The highest toplevel has the default collection Collection.top_key().
 """
 
 
-class IconStructure(ndb.Model): # use the counter mixin
-  """Basic icon class
-  """
-  icon_key = ndb.KeyProperty(required=False)
-  data = ndb.BlobProperty()
-  external_source = ndb.StringProperty(indexed=False) # not recommended
-  filetype = ndb.StringProperty(choices=['svg','pixel','external'],indexed=True,
-                     default='svg', required=True)
+#class IconStructure(ndb.Model): # use the counter mixin
+  #"""Basic icon class
+  #"""
+  #icon_key = ndb.KeyProperty(required=False)
+  #data = ndb.BlobProperty()
+  #external_source = ndb.StringProperty(indexed=False) # not recommended
+  #filetype = ndb.StringProperty(choices=['svg','pixel','external'],indexed=True,
+                     #default='svg', required=True)
 
 class Icon(CountableLazy, AddCollection, model.Base):
   name = ndb.StringProperty(indexed=True,required=True)

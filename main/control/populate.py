@@ -225,7 +225,7 @@ def admin_populate_icon():
     fs = flask.request.files.getlist("icon")
     cnt = 0
     for f in fs:
-      icon = model.IconStructure(data=f.read())
+      icon = f.read()
       model.Icon.create(icon=icon,
           name=f.filename.split('.')[0])
       names += f.filename.split('.')[0]+" "

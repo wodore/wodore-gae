@@ -29,6 +29,15 @@ class Base(ndb.Model):
       )
 
   @classmethod
+  def id_to_key(cls,id_str):
+    """ Returns key from a collection id """
+    if id_str.isdigit():
+      id = int(id_str)
+    else:
+      id = id_str
+    return ndb.Key(cls._get_kind(),id)
+
+  @classmethod
   @ndb.transactional
   def get_or_create(cls, id, parent=None, **kwargs):
     key = ndb.Key(cls, id, parent=parent)

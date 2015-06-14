@@ -68,6 +68,7 @@ def get_dbs(
     if isinstance(filters[prop], list):
       for value in filters[prop]:
         query = query.filter(model_class._properties[prop] == value)
+# new custom wodor app -------------
     if isinstance(filters[prop], dict):
       if filters[prop]['test'] == '>':
         query = query.filter(model_class._properties[prop] > filters[prop]['value'])
@@ -92,6 +93,7 @@ def get_dbs(
       query = query.order(model_class._properties[prop]) # TODO does it work?
     else:
       query = query.filter(model_class._properties[prop] == filters[prop])
+# ----------------------------------
 
   if order:
     for o in order.split(','):
@@ -99,8 +101,6 @@ def get_dbs(
         query = query.order(-model_class._properties[o[1:]])
       else:
         query = query.order(model_class._properties[o])
-
-  print query
   model_dbs, next_cursor, more = query.fetch_page(
       limit, start_cursor=cursor, keys_only=keys_only,
     )

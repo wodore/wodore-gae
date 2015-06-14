@@ -1,4 +1,5 @@
 # coding: utf-8
+from __future__ import absolute_import
 
 from flask.ext import wtf
 from google.appengine.ext import ndb
@@ -14,6 +15,8 @@ import util
 
 from main import app
 
+
+from .init import *
 
 ###############################################################################
 # Admin Stuff
@@ -136,6 +139,7 @@ class InitForm(wtf.Form):
   feedback_email = wtforms.StringField(model.Config.feedback_email._verbose_name, [wtforms.validators.optional(), wtforms.validators.email()], filters=[util.email_filter])
   notify_on_new_user = wtforms.BooleanField(model.Config.notify_on_new_user._verbose_name)
   verify_email = wtforms.BooleanField(model.Config.verify_email._verbose_name)
+  icon  = wtforms.FileField(u'Icons')
 
 @app.route('/admin/init/', methods=['GET', 'POST'])
 @auth.admin_required
@@ -153,80 +157,54 @@ def admin_init():
         config_db.salt = util.uuid()
       config_db.put()
       reload(config)
-      print "Config"
       app.config.update(CONFIG_DB=config_db)
 
      # init models
       col_key = control.collection_init()
-      new_tags = {
-          "tags_hiking_scale" : {
-                "tags" : ("T1","T2","T3","T4","T5","T6","T4-","T5-","T6-","T4+","T5+","T6+"),
-                "color" : "orange",
-                "category" : ["level"]
-          },
-          "tags_special_scale" : {
-                "tags" : ("hangover","advanced","ohh shit","just 2 beer","just 3 beer","just a beer"),
-                "color" : "darkblue",
-                "category" : ["level"]
-          },
-        "tags_touren_scale" : {
-                "tags" : ("L","L+","WS-","WS","WS-","ZS-","ZS","ZS+","S-","S","S+"),
-                "color" : "darkorange",
-                "category" : ["level"]
-          },
-        "tags_accomodation" : {
-                "tags" : ("hotel","alpine hut","accomodation","hostel", "tourism"),
-                "color" : "lightblue",
-                "category" : ["waypoint"]
-          },
 
-        "tags_public_transport" : {
-                "tags" : ("public transport","train","bus","cable car","cable lift","ferry"),
-                "color" : "lightgreen",
-                "category" : ["waypoint", "route"]
-          },
-        "tags_nature" : {
-                "tags" : ("peak","hill","glacier","forest","lake"),
-                "color" : "green",
-                "category" : ["waypoint","route"]
-          },
-        "tags_transport" : {
-                "tags" : ("parking","fuel"),
-                "color" : "blue",
-                "category" : ["waypoint"]
-          },
-        "tags_food_and_drink" : {
-                "tags" : ("food","restaurant","bar","pub"),
-                "color" : "brown",
-                "category" : ["waypoint", "route"]
-          },
-        "tags_entertainment" : {
-                "tags" : ("fun","cinema","theatre"),
-                "color" : "purple",
-                "category" : ["waypoint", "route"]
-          },
-        "tags_time" : {
-                "tags" : ("winter","summer","fall","autumn","full day","half day"),
-                "color" : "cyan",
-                "category" : ["waypoint", "route"]
-          },
-        "tags_categories" : {
-         "tags" : ("skitour","hiking","advanced hiking","mountainbike","alpinism",
-                      "climbing","trail","running","snow shoes"),
-                "color" : "purple",
-                "category" : ["route"]
-          }
-      }
-      for name in new_tags:
-        for tag in new_tags[name]["tags"]:
-          model.Tag.add(tag,color=new_tags[name]["color"], auto_incr=False,approved=True)
-        keys = model.TagRelation.add(new_tags[name]["tags"])
-        #increase counter
-        rel_dbs = []
-        for rel_db in ndb.get_multi(keys):
-          rel_db.incr(50)
-          rel_dbs.append(rel_db)
-        ndb.put_multi(rel_dbs)
+      # ICON init
+      icons = icon_init.icons_new
+      names = ""
+      tag_icon_ids = {}
+      fs = flask.request.files.getlist("icon")
+      cnt = 0
+      for f in fs:
+        icon = f.read()
+        name = f.filename.split('.')[0]
+        i = icons.get(name,{}) # icon dict
+        tags =  model.Tag.validate_tag(i.get('tags',"")\
+                  .split(',')) if i.get('tags') else []
+        keywords =  model.Tag.validate_tag(i.get('keywords',"")\
+                  .split(',')) if i.get('keywords') else []
+        icon_key = model.Icon.create(icon=icon,
+            name=name,
+            author_html = i.get('author_html'),
+            comment = i.get('comment'),
+            filetype = i.get('filetype'),
+            keywords = keywords.extend(tags)
+
+            )
+        for tag in tags:
+          try:
+            tag_icon_ids[tag] = icon_key.id()
+          except:
+            pass
+      ## TAG init
+      tags_new = tag_init.tags_new
+      for name in tags_new:
+        for tag in tags_new[name]["tags"]:
+          try:
+            icon_id = tag_icon_ids[tag]
+          except:
+            icon_id = None
+          model.Tag.add(tag,color=tags_new[name]["color"],icon_id=icon_id,\
+                auto_incr=False,approved=True)
+        keys = model.TagRelation.add(tags_new[name]["tags"],\
+               _incr_step=tags_new[name]["incr"])
+      tags_relation = tag_init.tags_relation
+      for name in tags_relation:
+        keys = model.TagRelation.add(tags_relation[name]["tags"],\
+               _incr_step=tags_relation[name]["incr"])
 
       return flask.redirect(flask.url_for('admin'))
 

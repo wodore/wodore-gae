@@ -107,6 +107,8 @@ def tag_update(col_id=None, tag=None):
     if not form.icon_id.data:
       #icon_id = ndb.Key(urlsafe=form.icon_key.data)
       icon_id = None
+    else:
+      icon_id = form.icon_id.data
 
     model.Tag.add(form.name.data,collection=col_key,icon_id=icon_id,
       icon_data=icon,color=form.color.data,

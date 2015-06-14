@@ -9,6 +9,7 @@ import util
 import config
 from .counter import CountableLazy
 from .collection import Collection, AddCollection
+import config
 
 """
 An icon consists of two model classes:
@@ -48,7 +49,7 @@ class Icon(CountableLazy, AddCollection, model.Base):
   #see: http://support.flaticon.com/hc/en-us/articles/202798381-How-to-attribute-the-icons-to-their-authors
   # this would be the author link
   author_html = ndb.StringProperty()
-  comment = ndb.StringProperty()
+  comment = ndb.TextProperty()
 
   # take as keywords the tags from flaticon
   keywords = ndb.StringProperty(indexed=True,repeated=True)
@@ -66,9 +67,9 @@ class Icon(CountableLazy, AddCollection, model.Base):
 
   @classmethod
   def create(cls,icon,name,collection=Collection.top_key(),\
-      toplevel=None, private=False, \
+      toplevel=None, private=False, author_html=None,\
       fallback=None, external_source=None, \
-      filetype=None, keywords=None,  auto=True):
+      filetype=None, keywords=None, comment=None, auto=True):
     """ Creates and puts a new icon to the database.
     As icon is the source code expected (svg or image).
     Keywords should be a list.
@@ -81,10 +82,14 @@ class Icon(CountableLazy, AddCollection, model.Base):
       new_icon.toplevel = toplevel
     if fallback:
       new_icon.toplevel = fallback
+    if author_html:
+      new_icon.author_html = author_html
     if external_source:
       new_icon.external_source = external_source
     if filetype:
       new_icon.filetype = filetype
+    if comment:
+      new_icon.comment = comment
     if keywords:
 # TODO check keywords (tag validator) and make list unique
       new_icon.keywords = keywords

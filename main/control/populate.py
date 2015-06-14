@@ -271,7 +271,8 @@ def admin_populate_waypoint():
     if form_waypoint.tags.data == "list":
       tag_list = form_waypoint.tag_list.data.split(', ')
     elif form_waypoint.tags.data == "random":
-      tag_dbs = model.Tag.qry(collection=model.Collection.top_key()).fetch(limit=10000)
+      #tag_dbs = model.Tag.qry(collection=model.Collection.top_key()).fetch(limit=10000)
+      tag_dbs, _ = model.Tag.get_dbs(collection=model.Collection.top_key(), limit=10000)
       tag_list = []
       for db in tag_dbs:
         tag_list.append(db.name)

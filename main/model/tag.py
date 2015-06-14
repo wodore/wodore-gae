@@ -57,18 +57,18 @@ class Tag(Iconize, CountableLazy, AddCollection, model.Base):
     choices=['level','waypoint','route'])
 
 
-  @staticmethod
-  def validate_tag(tag):
+  @classmethod
+  def validate_tag(cls,tag):
     """ Validates and proccesses a tag name:
      strip it and lower it if shorther than 4 letters.
      'tag' can also be a list with tags!
     """
     if not tag:
       return None
-    if isinstance(tag,list):
+    if isinstance(tag,list) or isinstance(tag,tuple):
       tags = []
       for t in tag:
-        tags.append(validate_tag(t))
+        tags.append(cls.validate_tag(t))
       return tags
     return tag.lower().strip() if len(tag) > 4 else tag.strip()
 
@@ -268,7 +268,8 @@ class TagRelation(CountableLazy, AddCollection, model.Base): # use the counter m
   def to_keyname(tag_name,related_to,collection=None):
     """Returns a key name (string)"""
     col = collection or Collection.top_key()
-    return "tagrel__{}_{}_{}".format(tag_name.lower(),related_to.lower(), col.id())
+    return "tagrel__{}_{}_{}".format(Tag.validate_tag(tag_name),\
+         Tag.validate_tag(related_to), col.id())
 
   @staticmethod
   def from_keyname(keyname):
@@ -346,20 +347,22 @@ class TagRelation(CountableLazy, AddCollection, model.Base): # use the counter m
     return ndb.put_multi(dbs_new)
 
   @classmethod
-  def add(cls, tag_names, collection=None):
+  def add(cls, tag_names, collection=None,_incr_step=1):
     """Add relations by a tag list"""
     if not tag_names:
       return []
     keys = TagRelation.generate_all_keys(tag_names,collection)
+    tag_names=Tag.validate_tag(tag_names)
     #print "Keys to add for relation"
     #print keys
-    return cls.add_by_keys(keys)
+    return cls.add_by_keys(keys,_incr_step)
 
   @classmethod
   def remove(cls, tag_names, collection=None):
     """Remove relations by a tag list"""
     if not tag_names:
       return []
+    tag_names=Tag.validate_tag(tag_names)
     keys = TagRelation.generate_all_keys(tag_names,collection)
     cls.add_by_keys(keys,_incr_step=-1)
     return keys

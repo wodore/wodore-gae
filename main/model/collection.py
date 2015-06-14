@@ -52,15 +52,6 @@ class Collection(CountableLazy, model.Base):
     return 'global'
 
   @classmethod
-  def id_to_key(cls,id_str):
-    """ Returns key from a collection id """
-    if id_str.isdigit():
-      id = int(id_str)
-    else:
-      id = id_str
-    return ndb.Key('Collection',id)
-
-  @classmethod
   def create_or_update_private(cls,creator_key=None, \
         creator_db=None):
     """ Creates a private collection """

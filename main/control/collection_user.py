@@ -30,6 +30,7 @@ def collection_user_list():
     col_key = model.Collection.id_to_key(col_id)
   if col_key:
     col_db = col_key.get()
+
   else:
     col_db=None
 

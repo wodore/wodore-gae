@@ -29,12 +29,13 @@ class Base(ndb.Model):
       )
 
   @classmethod
-  def id_to_key(cls,id_str):
+  def id_to_key(cls,id):
     """ Returns key from a collection id """
-    if id_str.isdigit():
-      id = int(id_str)
-    else:
-      id = id_str
+    try:
+        id = long(id)
+    except ValueError:
+        pass  # it was a string, not an int.
+
     return ndb.Key(cls._get_kind(),id)
 
   @classmethod

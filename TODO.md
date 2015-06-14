@@ -12,10 +12,10 @@ General
 
 Init
 ------
-* Write an init function
-  - Change name to wodore
-  - Add Public/Global collection
-  - Add Tags with relation
+* ~~Write an init function~~
+  - ~~Change name to wodore~~
+  - ~~Add Public/Global collection~~
+  - Add Tags with relation (One class per tag with relation, color, category)
 
 Collection
 ----------
@@ -61,4 +61,8 @@ Populate
 
 GAE-init
 --------
-* Update the newest version
+* ~~Update the newest version~~
+
+For Later
+---------
+* Add a notification/status/what ever info class

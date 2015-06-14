@@ -30,30 +30,48 @@ class IconStructure(ndb.Model): # use the counter mixin
   icon_key = ndb.KeyProperty(required=False)
   data = ndb.BlobProperty()
   external_source = ndb.StringProperty(indexed=False) # not recommended
-  filetype = ndb.StringProperty(choices=['svg','png','external'],indexed=True,
+  filetype = ndb.StringProperty(choices=['svg','pixel','external'],indexed=True,
                      default='svg', required=True)
 
 class Icon(CountableLazy, AddCollection, model.Base):
   name = ndb.StringProperty(indexed=True,required=True)
-  icon = ndb.StructuredProperty(IconStructure)
-  private = ndb.BooleanProperty(required=True,default=False)
-  replaced_by = ndb.KeyProperty() # if the icon should not be used anymore
+  #icon = ndb.StructuredProperty(IconStructure)
+  icon = ndb.BlobProperty(required=True)
+  private = ndb.BooleanProperty(required=True,default=False) # not shown for others
+                       # private means inside its collection
+  replaced_by = ndb.KeyProperty(kind='Icon') # if the icon should not be used anymore
+  fallback = ndb.KeyProperty(kind='Icon') # fallback icon, for example a png for a svg
+  external_source = ndb.StringProperty(indexed=False) # not recommended
+  filetype = ndb.StringProperty(choices=['svg','pixel','external'],indexed=True,
+                     default='svg', required=True)
 
-  def get_icon(self):
-    """ Returns a IconStructure.
+  #see: http://support.flaticon.com/hc/en-us/articles/202798381-How-to-attribute-the-icons-to-their-authors
+  # this would be the author link
+  author_html = ndb.StringProperty()
+  comment = ndb.StringProperty()
 
-    should be used instead of directly accessing the property 'icon'
-    """
-    if self.key is None:
-      raise UserWarning("Key not set yet, use first 'put()' before you use this method.")
-    self.icon.icon_key = self.key
-    return self.icon
+  # take as keywords the tags from flaticon
+  keywords = ndb.StringProperty(indexed=True,repeated=True)
+
+# DONT USE THIS ANYMORE
+  #def get_icon(self):
+    #""" Returns a IconStructure.
+#
+    #should be used instead of directly accessing the property 'icon'
+    #"""
+    #if self.key is None:
+      #raise UserWarning("Key not set yet, use first 'put()' before you use this method.")
+    #self.icon.icon_key = self.key
+    #return self.icon
 
   @classmethod
-  def create(cls,icon,name,collection=Collection.top_key()
-      ,toplevel=None,private=False, auto=True):
+  def create(cls,icon,name,collection=Collection.top_key(),\
+      toplevel=None, private=False, \
+      fallback=None, external_source=None, \
+      filetype=None, keywords=None,  auto=True):
     """ Creates and puts a new icon to the database.
-    As icon is a IconStructure expected.
+    As icon is the source code expected (svg or image).
+    Keywords should be a list.
     Returns Icon key"""
     new_icon = Icon(icon = icon,
         name=name,
@@ -61,7 +79,15 @@ class Icon(CountableLazy, AddCollection, model.Base):
         private=private)
     if toplevel:
       new_icon.toplevel = toplevel
-
+    if fallback:
+      new_icon.toplevel = fallback
+    if external_source:
+      new_icon.external_source = external_source
+    if filetype:
+      new_icon.filetype = filetype
+    if keywords:
+# TODO check keywords (tag validator) and make list unique
+      new_icon.keywords = keywords
     key = new_icon._add_and_put(auto=auto)
     return key
 
@@ -108,10 +134,11 @@ class Icon(CountableLazy, AddCollection, model.Base):
       return Icon.create(icon_db.icon,icon_db.name,collection=collection,toplevel=toplevel)
 
   @classmethod
-  def remove(cls,key):
+  def remove(cls,id):
     """Removes a icon by its key
 
     Remove means its counter is decreased by one"""
+    key = cls.id_to_key(id)
     icon_db = key.get()
     icon_db.decr()
     icon_db.put()
@@ -121,7 +148,7 @@ class Icon(CountableLazy, AddCollection, model.Base):
 
     returns a tag dbs and a variable more if more tags are available."""
 #TODO write test
-    dbs = model.Tag.query(model.Tag.icon.icon_key==self.key)\
+    dbs = model.Tag.query(model.Tag.icon_id==self.key.id())\
         .order(-model.Tag.cnt).fetch(limit+1)
     if len(dbs) > limit:
       more = True
@@ -184,19 +211,34 @@ class Icon(CountableLazy, AddCollection, model.Base):
     This only works for one level, if a higher hierarchy is required it needs to be
     done manually.
     """
-    if not getattr(self,'toplevel',None) and self.collection != Collection.top_key() and auto: #\
-      top = Icon(icon=self.icon,name=self.name)
+    if not getattr(self,'toplevel',None) \
+          and self.collection != Collection.top_key() \
+          and auto \
+          and not self.private: #no toplevel if private
+      #top = Icon(icon=self.icon,name=self.name)
+
+      top = Icon(icon=self.icon,name=self.name,\
+                 private=False,  \
+                 external_source=self.external_source, \
+                 filetype=self.filetype, keywords=self.keywords)
+      if getattr(self,'fallback',None) : # TODO test fallbacks
+        fallback_db = fallback.get()
+        fallback_key = getattr(fallback_db,'toplevel',None) # take toplevel if available
+        if not fallback_key:
+          fallback_key = self.fallback
+        top.fallback=fallback_key
+
       top_key = top.put()
       self.toplevel = top_key
 
     self.incr()
     self.put()
-    self.get_icon()
+    #self.get_icon()
     return self.key
 
 
 
-class Iconize(ndb.Model): # use the counter mixin
+class Iconize(ndb.Model):
   """Adds an icon property
 
   Icons are managed in the 'Icon' model, this mzixins
@@ -207,16 +249,25 @@ class Iconize(ndb.Model): # use the counter mixin
   The two method 'put' the icons automatically, this means it is recommanded to
   put the iconized model as well or remove the icon again if something went wrong.
     """
-  icon = ndb.StructuredProperty(IconStructure)
+  #icon = ndb.StructuredProperty(IconStructure)
+  icon_id = ndb.IntegerProperty(indexed=True,required=True, default=0)
 
-  def add_icon(self, key):
-    """Adds an icon by key, the key is either a toplevel key or an icon key."""
+  def add_icon(self, key=None, id=None):
+    """Adds an icon by key or id, the key is either a toplevel key or an icon key.
+    'id' needs to be a integer."""
+    if id:
+      key = Icon.id_to_key(id)
+    elif key:
+      id = key.id()
+    else:
+      return False
     if not getattr(self,'collection',None):
       col = Collection.top_key()
     else:
       col = self.collection
     key = Icon.add(key,collection=col)
-    self.icon = key.get().get_icon()
+    #self.icon = key.get().get_icon()
+    self.icon_id = key.id()
 
   def create_icon(self,icon,name,private=False):
     if not getattr(self,'collection',None):
@@ -224,15 +275,17 @@ class Iconize(ndb.Model): # use the counter mixin
     else:
       col = self.collection
     key = Icon.create(icon=icon,name=name,collection=col,private=private)
-    icon.icon_key = key
-    self.icon = icon
+    #icon.icon_key = key
+    #self.icon = icon
+    self.icon_id = key.id()
 
   def remove_icon(self):
-    if getattr(self,'icon',None):
-      Icon.remove(self.icon.icon_key)
-      del self.icon
+    if getattr(self,'icon_id',None):
+      Icon.remove(self.icon_id)
+    self.icon_id = 0
 
 ## TODO write test
+# shuld not be used anymore, replaced by get_icon_id
   def get_icon_key(self):
     if getattr(self,'icon',None):
       return self.icon.icon_key
@@ -240,6 +293,16 @@ class Iconize(ndb.Model): # use the counter mixin
       top_db = self.toplevel.get()
       if getattr(top_db,'icon',None):
         return top_db.icon.icon_key
+    else:
+      None
+
+  def get_icon_id(self):
+    if getattr(self,'icon_id',None):
+      return self.icon_id
+    elif getattr(self,'toplevel',None):
+      top_db = self.toplevel.get()
+      if getattr(top_db,'icon_id',None):
+        return top_db.icon_id
     else:
       None
 

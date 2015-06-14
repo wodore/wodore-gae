@@ -24,9 +24,12 @@ class TestIcon(unittest.TestCase):
     import config
     import model
     # Create a few icons
-    self.i1s_name = model.IconStructure()
-    self.i2s_type = model.IconStructure(filetype='png')
-    self.i3s_data = model.IconStructure(data="BLOB")
+    #self.i1s_name = model.IconStructure()
+    #self.i2s_type = model.IconStructure(filetype='pixel')
+    #self.i3s_data = model.IconStructure(data="BLOB")
+    self.i1s_name = "NAME"
+    self.i2s_type = 'TYPE'
+    self.i3s_data = "DATA"
     self.colg = model.Collection.top_key()
     self.col1 = ndb.Key('Collection','one')
     self.col2 = ndb.Key('Collection','two')
@@ -40,17 +43,17 @@ class TestIcon(unittest.TestCase):
     i1.put()
     assert i1 is not None
     self.assertEqual(i1.name, 'i1s_name')
-    self.assertEqual(i1.icon.filetype, 'svg')
+    self.assertEqual(i1.filetype, 'svg')
     self.assertEqual(i1.collection, self.colg)
 
   def test_init_with_type_data_and_collection(self):
-    i2 = model.Icon(icon=self.i2s_type,name='i2s_type')
+    i2 = model.Icon(icon=self.i2s_type,name='i2s_type',filetype='pixel')
     i3 = model.Icon(icon=self.i3s_data,name='i3s_data',collection=self.col1)
     ndb.put_multi([i2,i3])
     self.assertEqual(i2.name, 'i2s_type')
-    self.assertEqual(i2.icon.filetype, 'png')
+    self.assertEqual(i2.filetype, 'pixel')
     self.assertEqual(i3.collection,self.col1)
-    self.assertEqual(i3.icon.data, 'BLOB')
+    self.assertEqual(i3.icon, 'DATA')
 
 
   def test_init_counter(self):
@@ -63,19 +66,19 @@ class TestIcon(unittest.TestCase):
     i1.put()
     self.assertEqual(i1.count, 0)
 
-  def test_post_put_get_icon(self):
-    i1 = model.Icon(icon=self.i1s_name,name='i')
-    i1.put()
-    i1sn = i1.get_icon()
-    self.assertEqual(i1sn.icon_key,ndb.Key('Icon', 1))
+  #def test_post_put_get_icon(self):
+    #i1 = model.Icon(icon=self.i1s_name,name='i')
+    #i1.put()
+    #i1sn = i1.get_icon()
+    #self.assertEqual(i1sn.icon_key,ndb.Key('Icon', 1))
 
-  def test_pre_put_get_icon(self):
-    i1 = model.Icon(icon=self.i1s_name,name='i')
-    with self.assertRaises(UserWarning):
-      i1sn = i1.get_icon()
-    i1.put()
-    i1sn = i1.get_icon()
-    self.assertEqual(i1sn.icon_key,ndb.Key('Icon', 1))
+  #def test_pre_put_get_icon(self):
+    #i1 = model.Icon(icon=self.i1s_name,name='i')
+    #with self.assertRaises(UserWarning):
+      #i1sn = i1.get_icon()
+    #i1.put()
+    #i1sn = i1.get_icon()
+    #self.assertEqual(i1sn.icon_key,ndb.Key('Icon', 1))
 
 
   def test_init_icon_with_collection(self):
@@ -172,7 +175,6 @@ class TestIcon(unittest.TestCase):
     key = model.Icon.create(icon=self.i1s_name,name='i')
     icon_db = key.get()
     self.assertEqual(icon_db.key , key)
-    self.assertEqual(icon_db.icon.icon_key , key)
     self.assertEqual(icon_db.collection , self.colg)
     self.assertEqual(getattr(icon_db,'toplevel',None) , None)
     # create the same with collection
@@ -180,7 +182,7 @@ class TestIcon(unittest.TestCase):
         collection=self.col1,
         toplevel=key)
     icon2_db = key2.get()
-    self.assertEqual(icon2_db.icon.icon_key , key2)
+    self.assertEqual(icon2_db.key , key2)
     self.assertEqual(icon2_db.collection , self.col1)
     self.assertEqual(icon2_db.count,1)
     key3 = model.Icon.create(icon=self.i1s_name,name='i',
@@ -260,12 +262,12 @@ class TestIcon(unittest.TestCase):
     icon_db = key.get()
     self.assertEqual(icon_db.count,2)
     ## Remove it
-    model.Icon.remove(key)
+    model.Icon.remove(key.id())
     icon_db = key.get()
     self.assertEqual(icon_db.count,1)
     ## Add icon with collection and remove it
     key2 = model.Icon.add(key,collection=self.col1)
-    model.Icon.remove(key2)
+    model.Icon.remove(key2.id())
     icon_db = key.get()
     icon2_db = key2.get()
     self.assertEqual(icon_db.count,1)
@@ -345,9 +347,12 @@ class TestIconizedModel(unittest.TestCase):
 
 
     # Create a few icons
-    self.i1s_name = model.IconStructure()
-    self.i2s_type = model.IconStructure(filetype='png')
-    self.i3s_data = model.IconStructure(data="BLOB")
+    #self.i1s_name = model.IconStructure()
+    #self.i2s_type = model.IconStructure(filetype='pixel')
+    #self.i3s_data = model.IconStructure(data="BLOB")
+    self.i1s_name = "NAME"
+    self.i2s_type = 'TYPE'
+    self.i3s_data = "DATA"
     self.colg = model.Collection.top_key()
     self.col1 = ndb.Key('Collection','one')
     self.col2 = ndb.Key('Collection','two')
@@ -365,42 +370,42 @@ class TestIconizedModel(unittest.TestCase):
     im.create_icon(self.i1s_name,name='1')
     key1 = im.put()
     im_db = key1.get()
-    assert im_db.icon is not None
+    assert im_db.icon_id is not None
     im2 = TestIconModel(name="X2")
-    im2.add_icon(im_db.icon.icon_key)
+    im2.add_icon(id=im_db.icon_id)
     key2 = im2.put()
     im2_db = key2.get()
-    assert im2_db.icon is not None
+    assert im2_db.icon_id is not None
     icon_dbs = model.Icon.qry().fetch()
     self.assertEqual(len(icon_dbs),1)
     self.assertEqual(icon_dbs[0].collection,self.colg)
     self.assertEqual(icon_dbs[0].cnt,2)
-    self.assertEqual(icon_dbs[0].icon,im2_db.icon)
+    self.assertEqual(icon_dbs[0].key.id(),im2_db.icon_id)
 
   def test_iconized_with_collection(self):
     im = TestIconModel(name="X",collection=self.col1)
     im.create_icon(self.i1s_name,name='1')
     key1 = im.put()
     im_db = key1.get()
-    assert im_db.icon is not None
+    assert im_db.icon_id is not None
     icon_dbs = model.Icon.qry().fetch()
     self.assertEqual(len(icon_dbs),2)
     icon_dbs = model.Icon.qry(collection=self.col1).fetch()
     self.assertEqual(len(icon_dbs),1)
     self.assertEqual(icon_dbs[0].collection,self.col1)
     self.assertEqual(icon_dbs[0].cnt,1)
-    self.assertEqual(icon_dbs[0].icon,im_db.icon)
+    self.assertEqual(icon_dbs[0].key.id(),im_db.icon_id)
 
   def test_iconized_remove_icon(self):
     im = TestIconModel(name="X",collection=self.col1)
     im.create_icon(self.i1s_name,name='1')
     key1 = im.put()
     im_db = key1.get()
-    assert im_db.icon is not None
+    assert im_db.icon_id is not None
     im.remove_icon()
     key1 = im.put()
     im_db = key1.get()
-    assert im_db.icon is None
+    self.assertEqual(im_db.icon_id,0)
     icon_db = model.Icon.qry().get()
     self.assertEqual(icon_db.cnt,0)
 

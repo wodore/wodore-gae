@@ -4,10 +4,61 @@ window.init_map = (center=[47,8],zoom=7)->
 
 init_leaflet_map = (center=[47,8],zoom=7) ->
   LOG "[init] map (c) leaflet"
-# create a map in the "map" div, set the view to a given place and zoom
-  map = L.map('map').setView(center, zoom);
+# Define tile servers:
+  thunderforestOutdoors = L.tileLayer(
+    'http://{s}.tile.thunderforest.com/outdoors/{z}/{x}/{y}.png',
+    { attribution: '&copy; <a href="http://www.opencyclemap.org">OpenCycleMap</a>, &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>' })
+
+  thunderforestOpenCycleMap = L.tileLayer(
+     'http://{s}.tile.thunderforest.com/cycle/{z}/{x}/{y}.png',
+     { attribution: '&copy; <a href="http://www.opencyclemap.org">OpenCycleMap</a>, &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>' })
+
+  thunderforestTransport = L.tileLayer(
+    'http://{s}.tile.thunderforest.com/transport/{z}/{x}/{y}.png',
+    { attribution: '&copy; <a href="http://www.opencyclemap.org">OpenCycleMap</a>, &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>' })
+
+  refugesHiking = L.tileLayer(
+    'http://maps.refuges.info/hiking/{z}/{x}/{y}.png',
+    { attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors' })
+
+  stamenWatercolor = L.tileLayer(
+    'http://{s}.tile.stamen.com/watercolor/{z}/{x}/{y}.{ext}', {
+    attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; Map data &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    subdomains: 'abcd',
+    minZoom: 1,
+    maxZoom: 16,
+    ext: 'png' })
+
+  osmMap = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png',
+    { attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors' })
+
+# time stamp needs to be updated from time to time
+  geo_admin_timestamp = '20151231'
+  geo_admin_url = 'http://wmts{s}.geo.admin.ch/1.0.0/ch.swisstopo.pixelkarte-farbe/default/'+geo_admin_timestamp+'/3857/{z}/{x}/{y}.jpeg'
+
+  swissGeoAdminMap = L.tileLayer(
+    geo_admin_url, {
+    attribution: '&copy; <a href="http://www.swisstopo.admin.ch/internet/swisstopo/en/home.html">swisstopo</a>',
+    subdomains: ['10','11','12','13','14'],
+    minZoom: 8 })
+
+  map = L.map('map' , {
+    layers: [thunderforestOutdoors],
+    zoomControl : true }).setView(center, zoom)
 # add an OpenStreetMap tile layer
-  L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png').addTo(map);
+
+  baseLayers = {
+      "Swiss Topo": swissGeoAdminMap,
+      "OSM Mapnik": osmMap,
+      "Outdoor": thunderforestOutdoors,
+      "Cycle": thunderforestOpenCycleMap,
+      "Hiking" : refugesHiking,
+      "Transport": thunderforestTransport
+      "Watercolor": stamenWatercolor
+          }
+
+  L.control.layers(baseLayers).addTo(map)
+
 
   return map
 
@@ -42,29 +93,32 @@ window.overpass_query = (options) ->
       options.radius = 40
 
   if not options?.values?
-   options.values = [['"natural"="peak"', 'n']
-                ['"public_transport"', 'nw']
-                ['"tourism"', 'nw']
-                ['"highway"="bus_stop"', 'n']
-                ['"bus"="yes"','n']
-                ['"train"="yes"','n']
-                ['"amenity"="restaurant"', 'nw']
-                ['"amenity"="bicycle_parking"', 'nw']
-                ['"amenity"="bicycle_rental"', 'nw']
-                ['"amenity"="car_rental"', 'nw']
-                ['"amenity"="ferry_terminal"', 'nw']
-                ['"amenity"="fuel"', 'nw']
-                ['"amenity"="parking"', 'nw']
-                ['"amenity"="clinic"', 'nw']
-                ['"amenity"="hospital"', 'nw']
-                ['"amenity"="pharmacy"', 'nw']
-                ['"amenity"="cinema"', 'nw']
-                ['"amenity"="theatre"', 'nw']
-                ['"amenity"="grave_yard"', 'nw']
-                ['"amenity"="police"', 'nw']
-                ['"amenity"="shelter"', 'nw']
-                ['"amenity"="toilets"', 'nw']
-                ['"amenity"="water_point"', 'nw']
+   options.values = [['natural=peak', 'name', 'n']
+                ['public_transport','name', 'nw']
+                ['railway~"bus_stop|tram_stop|station|halt"', 'name' , 'nw']
+                ['highway~"bus_stop|platform"', 'name' , 'nw']
+                ['aerialway=station', 'name' , 'n']
+                ['aerialway~"gondola|chair_lift|cable_car"', 'name' , 'nw']
+                ['tourism', 'name', 'nw']
+                ['bus=yes', 'name','n']
+                ['train=yes', 'name','n']
+                ['amenity=restaurant', 'name', 'nw']
+                ['amenity=bicycle_parking', 'nw']
+                ['amenity=bicycle_rental', 'nw']
+                ['amenity=car_rental', 'nw']
+                ['amenity=ferry_terminal', 'nw']
+                ['amenity=fuel', 'nw']
+                ['amenity=parking', 'nw']
+                ['amenity=clinic', 'nw']
+                ['amenity=hospital', 'nw']
+                ['amenity=pharmacy', 'nw']
+                ['amenity=cinema', 'nw']
+                ['amenity=theatre', 'nw']
+                ['amenity=grave_yard', 'nw']
+                ['amenity=police', 'nw']
+                ['amenity=shelter', 'nw']
+                ['amenity=toilets', 'nw']
+                ['amenity=water_point', 'nw']
                 ]
 
 
@@ -82,17 +136,26 @@ window.overpass_query = (options) ->
 
     qry = '[out:json];('
     for val in options.values
-      if 'n' in val[1]
-        qry += 'node['+val[0]+'](around:'+r+','+latlng+');'
-      if 'w' in val[1]
-        qry += 'way['+val[0]+'](around:'+r+','+latlng+');'
-      if 'r' in val[1]
-        qry += 'relation['+val[0]+'](around:'+r+','+latlng+');'
-    qry += ');out body;'
+      # build queries
+      tests = ""
+      LOG val[0...-1]
+      LOG val[-1..]
+      for t in val[0...-1]
+        tests += "[#{t}]"
+      if 'n' in val[-1..][0]
+        qry += "node#{tests}(around:#{r},#{latlng});"
+      if 'w' in val[-1..][0]
+        qry += "way#{tests}(around:#{r},#{latlng});"
+      if 'r' in val[-1..][0]
+        qry += "rel#{tests}(around:#{r},#{latlng});"
+      LOG qry
+    qry += ');out tags qt 15;'
+    LOG qry
     qry = encodeURIComponent(qry)
 
     $.getJSON overpass_api, "data="+qry, (data) ->
-      #LOG data
+      LOG "Results from the overpass api call:"
+      LOG data
       if data.elements[0]?
         if data.elements[0].tags.uic_name
           name = data.elements[0].tags.uic_name
@@ -107,6 +170,9 @@ window.overpass_query = (options) ->
           if key == 'tourism'
             tags.push key
             tags.push value
+            if value in ['hotel','alpine hut','hostel',
+              'motel','camp_site','caravan_site']
+              tags.push 'accomodation'
           if value == 'peak'
             tags.push value
           if (key == 'bus' and value == 'yes') or (key == 'highway' and value == 'bus_stop')

@@ -29,7 +29,7 @@ class icon_init(object):
           "filetype" : "svg"
        },
     "home63" : {
-          "tags" : "alpine hut, hostel",
+          "tags" : "alpine hut, hostel, wilderness hut, hut",
           "keywords" : "house, building, interface, web development,  home",
           "author_html" : '<a href="http://www.icomoon.io" title="Icomoon">Icomoon</a>',
           "comment" : "",
@@ -241,49 +241,49 @@ class icon_init(object):
     "ski16" : {
           "tags" : "ski tour",
           "keywords" : "ski, skiing, snow, winter season, winter, winter sports",
-          "author_html" : '<div>Icon made by <a href="http://www.freepik.com" title="Freepik">Freepik</a>',
+          "author_html" : '<a href="http://www.freepik.com" title="Freepik">Freepik</a>',
           "comment" : "",
           "filetype" : "svg"
        },
     "walk12" : {
           "tags" : "hiking, trekking",
           "keywords" : "walk, sport, trekking, hiking, traveller, cane",
-          "author_html" : '<div>Icon made by <a href="http://www.freepik.com" title="Freepik">Freepik</a>',
+          "author_html" : '<a href="http://www.freepik.com" title="Freepik">Freepik</a>',
           "comment" : "",
           "filetype" : "svg"
        },
     "climbing5" : {
           "tags" : "climbing",
           "keywords" : "adventure sports, multisports, sport, sports, silhouette, silhouettes, climbing, climb",
-          "author_html" : '<div>Icon made by <a href="http://www.freepik.com" title="Freepik">Freepik</a>',
+          "author_html" : '<a href="http://www.freepik.com" title="Freepik">Freepik</a>',
           "comment" : "",
           "filetype" : "svg"
        },
     "climbing8" : {
           "tags" : "alpine tour",
           "keywords" : "climbing, climb, adventure, adventure sports",
-          "author_html" : '<div>Icon made by <a href="http://www.freepik.com" title="Freepik">Freepik</a>',
+          "author_html" : '<a href="http://www.freepik.com" title="Freepik">Freepik</a>',
           "comment" : "",
           "filetype" : "svg"
        },
     "climbing2" : {
           "tags" : "", # no tag sofar (equipment)
           "keywords" : "mountaineering, mountain sports, sport, sports, multisports, sportive, equipment, climbing equipment, climb",
-          "author_html" : '<div>Icon made by <a href="http://www.freepik.com" title="Freepik">Freepik</a>',
+          "author_html" : '<a href="http://www.freepik.com" title="Freepik">Freepik</a>',
           "comment" : "",
           "filetype" : "svg"
        },
     "mountain23" : {
           "tags" : "trail running",
           "keywords" : "multisports, sport, sports, mountain, runner, running, trail",
-          "author_html" : '<div>Icon made by <a href="http://www.freepik.com" title="Freepik">Freepik</a>',
+          "author_html" : '<a href="http://www.freepik.com" title="Freepik">Freepik</a>',
           "comment" : "",
           "filetype" : "svg"
        },
     "sprint" : {
           "tags" : "running",
           "keywords" : "Sprint, run, running, fast, race",
-          "author_html" : '<div>Icon made by <a href="http://www.freepik.com" title="Freepik">Freepik</a>',
+          "author_html" : '<a href="http://www.freepik.com" title="Freepik">Freepik</a>',
           "comment" : "",
           "filetype" : "svg"
        },
@@ -298,6 +298,34 @@ class icon_init(object):
           "tags" : "snow shoes",
           "keywords" : "snow, mountain sports, winter sports, winter, winter season",
           "author_html" : '<a href="http://www.scottdejonge.com" title="Scott de Jonge">Scott de Jonge</a>',
+          "comment" : "",
+          "filetype" : "svg"
+       },
+    "info31" : {
+          "tags" : "information",
+          "keywords" : "info, information, help",
+          "author_html" : '<a href="http://www.danielbruce.se" title="Daniel Bruce">Daniel Bruce</a>',
+          "comment" : "",
+          "filetype" : "svg"
+       },
+    "map47" : {
+          "tags" : "", # not used yet
+          "keywords" : "map, maps, marker, arrow, arrows, directions",
+          "author_html" : '<a href="http://www.simpleicon.com" title="SimpleIcon">SimpleIcon</a>',
+          "comment" : "",
+          "filetype" : "svg"
+       },
+    "water61" : {
+          "tags" : "drinking water",
+          "keywords" : "water, liquid, drop",
+          "author_html" : '<a href="http://www.freepik.com" title="Freepik">Freepik</a>',
+          "comment" : "",
+          "filetype" : "svg"
+       },
+    "bonfire" : {
+          "tags" : "bbq",
+          "keywords" : "bonfire, camp, fire, survival",
+          "author_html" : '<a href="http://www.freepik.com" title="Freepik">Freepik</a>',
           "comment" : "",
           "filetype" : "svg"
        },

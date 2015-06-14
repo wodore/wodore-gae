@@ -8,9 +8,15 @@ window.init_waypoint_update = ->
 init_admin_waypoint_map = ->
   LOG "[init] admin waypoint map"
   map = init_map()
-  for geo in $('.geo-point')
-    coord = $(geo).text().split(',')
-    L.marker(coord).addTo(map)
+
+  marker_group = []
+  for waypoint in $('.waypoint-info')
+    coord = $('.geo-point',waypoint).text().split(',')
+    popup = $(waypoint).html()+"<br><a href=\"#{$('.point-edit-url',waypoint).text()}\" class=\"text-right\"> edit </a>"
+    marker_group.push(L.marker(coord).addTo(map).bindPopup(popup))
+  LOG marker_group
+  marker_feature = new L.featureGroup(marker_group)
+  map.fitBounds(marker_feature.getBounds())
 
 
 init_update_waypoint_map = ->
@@ -32,8 +38,6 @@ init_update_waypoint_map = ->
   else
     LOG "Add new waypoint"
     map = init_map([46.9,9],10)
-
-
   if geo[0]
     _add_marker(geo)
   else

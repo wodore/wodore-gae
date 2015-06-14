@@ -69,7 +69,7 @@ def get_dbs(
       for value in filters[prop]:
         query = query.filter(model_class._properties[prop] == value)
 # new custom wodor app -------------
-    if isinstance(filters[prop], dict):
+    elif isinstance(filters[prop], dict):
       if filters[prop]['test'] == '>':
         query = query.filter(model_class._properties[prop] > filters[prop]['value'])
       elif filters[prop]['test'] == '>=':

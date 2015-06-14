@@ -16,7 +16,7 @@ class tag_init(object):
           "category" : ["level"], "incr" : 20
     },
   "tags_accomodation" : {
-          "tags" : ("hotel","alpine hut","accomodation","hostel", "tourism"),
+          "tags" : ("hotel","alpine hut","accomodation","hostel", "tourism", "wilderness hut"),
           "color" : "lightblue",
           "category" : ["waypoint"], "incr" : 20
     },
@@ -37,9 +37,14 @@ class tag_init(object):
           "category" : ["waypoint"], "incr" : 20
     },
   "tags_food_and_drink" : {
-          "tags" : ("food","restaurant","bar","pub"),
+          "tags" : ("food","restaurant","bar","pub","picnic"),
           "color" : "brown",
           "category" : ["waypoint", "route"], "incr" : 20
+    },
+  "tags_misc" : {
+          "tags" : ("information","bbq","drinking water"),
+          "color" : "black",
+          "category" : ["waypoint"], "incr" : 20
     },
   "tags_entertainment" : {
           "tags" : ("fun","cinema","theatre","entertainment"),
@@ -92,5 +97,30 @@ class tag_init(object):
           "tags" : ("summer","autumn","alpinism"),
           "incr" : 30
     },
+   "tags_accomodation_relation1" : {
+          "tags" : ("alpin hut","wilderness hut","hut"),
+          "incr" : 30
+    },
+   "tags_accomodation_relation2" : {
+          "tags" : ("hotel","motel","hostel"),
+          "incr" : 10
+    },
+   "tags_accomodation_relation3" : {
+          "tags" : ("alpin hut","accomodation","hut"),
+          "incr" : 40
+    },
+   "tags_accomodation_relation4" : {
+          "tags" : ("wilderness hut","accomodation","hut"),
+          "incr" : 40
+    },
+   "tags_accomodation_relation5" : {
+          "tags" : ("hostel","accomodation"),
+          "incr" : 40
+    },
+   "tags_accomodation_relation6" : {
+          "tags" : ("hotel","accomodation"),
+          "incr" : 40
+    },
+
  }
 

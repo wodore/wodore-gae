@@ -37,6 +37,11 @@
         {{utils.filter_by_link('active', True, 'thumbs-o-up')}}
         {{utils.filter_by_link('active', False, 'thumbs-o-down')}}
       </div>
+      <div class="btn-group btn-group-sm">
+        <a href="{{url_for('collection_list', order=param('order'))}}" class="btn btn-primary" role="button" title="Remove all filters">
+          No Filter
+        </a>
+       </div>
     </div>
   </div>
 
@@ -49,14 +54,14 @@
     <table class="table table-bordered table-hover">
       <thead>
         <tr class="text-nowrap">
-          <th class="col-xs-4">
+          <th class="col-xs-6">
 ##<input id="select-all" type="checkbox"> 
             {{utils.order_by_link('name', 'Name')}}
             <span class="">{{utils.order_by_link('cnt', '#')}}</span><br>
             <small> Description </small> 
           </th>
           <th class="col-xs-2">{{utils.order_by_link('modified', 'Modified')}}<br><small>{{utils.order_by_link('created', 'Created')}}</small></th>
-          <th class="text-center" title="Key"><span class="fa fa-key"></span></th>
+          <th class="text-xs-2" title="Key"><span class="fa fa-key"></span></th>
           <th class="col-xs-1" title="Links">Links <span class="fa fa-link"></span></th>
         </tr>
       </thead>
@@ -86,7 +91,7 @@
               </time>
             </td>
             <td>
-              <span class=small>{{col_db.key.urlsafe()}}</span>
+              <span class=small>{{col_db.key.id()}}</span>
             </td>
             <td>
               <a href="{{url_for('collection_user_list',collection=col_db.key.urlsafe(),order='-modified' )}}" class="">

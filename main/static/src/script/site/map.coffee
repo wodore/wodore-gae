@@ -62,37 +62,57 @@ init_leaflet_map = (center=[47,8],zoom=7) ->
 
   return map
 
-  """ Function which returns a overpass query
-  options = { values : [ ['"natural"="peak"', 'n']
-                ['"public_transport"', 'nw']
-                ['"tourism"', 'nw']
-                ... ],
-              radius : 40}
 
-  This returns a function which can be used to query overpass calls.
-  The function needs the coordinates and as optional second argumend a radius.
-  """
+""" Function which returns a overpass query
+options = { values : [ ['"natural"="peak"', 'n']
+              ['"public_transport"', 'nw']
+              ['"tourism"', 'nw']
+              ... ],
+            radius : 80}
+
+Returns a function which can be used to query overpass calls.
+The function needs the coordinates as argument:
+  get_info = overpass_query({radius:20})
+  res = get_info("47.4,9.0")
+  LOG res.tags
+  LOG res.name
+  ...
+"""
 window.overpass_query = (options) ->
+  # INTERNAL FUNCTIONS
+  # ------------------
   clean_tags = (ar) ->
-          if ar.length == 0
-            return []
-          res = {}
-          res[ar[key]] = ar[key] for key in [0..ar.length-1]
-          value.split('_').join(' ') for key, value of res
-          clean_tags = (ar) ->
+          LOG "internal input #{ar}"
+          LOG "internal value #{value}"
+          LOG "internal res #{res}"
           if ar.length == 0
             return []
           res = {}
           res[ar[key]] = ar[key] for key in [0..ar.length-1]
           value.split('_').join(' ') for key, value of res
 
+  # Calculates the distance between two points.
+  # Only use this for close points (formula is not accurate)
+  dist = (lon_from,lat_from,lon_to,lat_to) ->
+         if not (lat_to? and lon_to?)
+           return 10000
+         phi_base = lat_from*0.01745329251
+         theta_base = lon_from*0.01745329251
+         phi = lat_to*0.01745329251
+         theta = lon_to*0.01745329251
+         dx = Math.cos(phi_base) * (theta - theta_base)
+         dy = phi - phi_base
+         return Math.sqrt(dx*dx+dy*dy)
+
+  # ------------------
+  # DEFINE OPTIONS
   if not options?
     options = {}
 
   if not options?.radius?
-      options.radius = 40
+      options.radius = 80 # default (in meter)
 
-  if not options?.values?
+  if not options?.values? #TODO amenity with ~ and |
    options.values = [['natural=peak', 'name', 'n']
                 ['public_transport','name', 'nw']
                 ['railway~"bus_stop|tram_stop|station|halt"', 'name' , 'nw']
@@ -121,25 +141,21 @@ window.overpass_query = (options) ->
                 ['amenity=water_point', 'nw']
                 ]
 
-
-
   (latlng, callback) ->
-    if latlng?
+    if not latlng?
       LOG "[ERROR] No coordinates are given ('latlng')"
     out = {}
-    # overpass api
+    # overpass api server TODO: chose random, take another if one is down.
     overpass_api = "http://overpass-api.de/api/interpreter"
     overpass_api = "http://overpass.osm.rambler.ru/cgi/interpreter"
-    overpass_api = "http://overpass.osm.ch/api/interpreter"
+    overpass_api = "http://overpass.osm.ch/api/interpreter" # default
 
     r = options.radius
-
     qry = '[out:json];('
+
+    # build queries
     for val in options.values
-      # build queries
       tests = ""
-      LOG val[0...-1]
-      LOG val[-1..]
       for t in val[0...-1]
         tests += "[#{t}]"
       if 'n' in val[-1..][0]
@@ -148,48 +164,93 @@ window.overpass_query = (options) ->
         qry += "way#{tests}(around:#{r},#{latlng});"
       if 'r' in val[-1..][0]
         qry += "rel#{tests}(around:#{r},#{latlng});"
-      LOG qry
-    qry += ');out tags qt 15;'
-    LOG qry
+    qry += ');out body qt 40;'
     qry = encodeURIComponent(qry)
 
     $.getJSON overpass_api, "data="+qry, (data) ->
       LOG "Results from the overpass api call:"
-      LOG data
-      if data.elements[0]?
-        if data.elements[0].tags.uic_name
-          name = data.elements[0].tags.uic_name
-        else
-          name = data.elements[0].tags.name
+      LOG data.elements
+      #LOG "GeoJSON" # it is possible to change the data to geo json
+      #geoJson = osmtogeojson.toGeojson(data)
+
+
+      # Sort the results form closest to furtherst
+      latlngArray = latlng.split(',')
+      lat = Number(latlngArray[0])
+      lng = Number(latlngArray[1])
+      elements = data.elements
+      elements.sort (a,b) ->
+        dist(lng,lat,Number(a.lon),Number(a.lat)) - \
+        dist(lng,lat,Number(b.lon),Number(b.lat))
+      LOG "Elements after sorting"
+      LOG elements # debug
+
+      if elements[0]?
+        # find a name
+        # 1. take the uic_name
+        # 2. if not take name
+        # 3. try the next element
+        for n in elements
+          if n.tags.uic_name
+            name = n.tags.uic_name
+            break
+          else if n.tags.name
+            name = n.tags.name
+            break
+          else
+            name = ""
         out.name = name
-        out.url = data.elements[0].tags.url
+        # check for a url
+        if elements[0].tags.website?
+          out.url = elements[0].tags.website
+        else if elements[0].tags.wikipedia?
+          wiki = elements[0].tags.wikipedia.split(':')
+          out.url = "http://www.#{wiki[0]}.wikipedia.org/wiki/#{wiki[1]}"
+        else if elements[0].tags.url?
+          out.url = elements[0].tags.url
+        else if elements[0].tags.facebook?
+          out.url = elements[0].tags.facebook
+        else
+          out.url = ""
+
+        if elements[0].tags.description?
+          out.description = elements[0].tags.description
+        else
+          out.description = ""
 
         # check tags
         tags = []
-        for key, value of data.elements[0].tags
+        for key, value of elements[0].tags
           if key == 'tourism'
             tags.push key
             tags.push value
             if value in ['hotel','alpine hut','hostel',
-              'motel','camp_site','caravan_site']
+              'motel','camp_site','caravan_site','wilderness hut']
               tags.push 'accomodation'
           if value == 'peak'
             tags.push value
-          if (key == 'bus' and value == 'yes') or (key == 'highway' and value == 'bus_stop')
+          if (key == 'bus' and value == 'yes')\
+          or (key == 'highway' and value == 'bus_stop')\
+          or (key == 'railway' and value == 'bus_stop')
             tags.push 'bus'
             tags.push 'public_transport'
-          if (key == 'train' and value == 'yes') or (key == 'highway' and value == 'train_stop')
+          if (key == 'train' and value == 'yes') \
+          or (key == 'highway' and value == 'train_stop')\
+          or (key == 'railway' and value == 'station')
             tags.push 'train'
             tags.push 'public_transport'
           if key == 'public_transport'
             tags.push key
           if key == 'amenity'
             tags.push value
+        LOG tags
         out.tags = clean_tags(tags)
+        LOG out.tags
       else
         out.name = ""
         out.url = ""
-        out.tags = ""
+        out.description = ""
+        out.tags = []
       callback(out)
     return true
 

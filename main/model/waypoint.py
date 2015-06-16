@@ -15,17 +15,15 @@ import config
 
 #class WayPoint(model.Base): # does not work with unit test yet
 from .tag import Taggable#, TagStructure, Tag, TagRelation
+from .collection import Collection, AddCollection
 
-class WayPoint(Taggable, model.Base):
+class WayPoint(Taggable, AddCollection, model.Base):
   name = ndb.StringProperty(required=True)
-  collection = ndb.StringProperty(required=True, indexed=True )
   description = ndb.TextProperty()
   url = ndb.StringProperty(validator=lambda p, v: v.lower())
   geo = ndb.GeoPtProperty(indexed=True) # lat/long coordinates
   custom_fields = ndb.GenericProperty(repeated=True)
   creator = ndb.KeyProperty(kind="User") # default: current user key
-  #created = ndb.DateTimeProperty(auto_now_add=True)
-  #modified = ndb.DateTimeProperty(auto_now=True)
 
   @classmethod
   def qry(cls, name=None, collection=None, tag=None, \
@@ -55,13 +53,13 @@ class WayPoint(Taggable, model.Base):
 
   @classmethod
   def get_dbs(
-      cls, name=None, collection=None,
+      cls, name=None,
       tags=None, creator=None, geo=None, **kwargs
     ):
+    kwargs = cls.get_col_dbs(**kwargs)
+    kwargs = cls.get_tag_dbs(**kwargs)
     return super(WayPoint, cls).get_dbs(
         name=name or util.param('name', str),
-        collection=collection or util.param('collection', str),
-        tags=tags or util.param('tags', list),
         creator=creator or util.param('creator', ndb.Key),
         geo=geo or util.param('geo', str),
         **kwargs

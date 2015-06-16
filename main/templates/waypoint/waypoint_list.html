@@ -1,6 +1,7 @@
 # extends 'admin/admin_base.html'
 # import 'macro/utils.html' as utils
 # import 'macro/utils_tag.html' as utils_tag
+# import 'macro/utils_collection.html' as col_utils
 
 # block head
   {{utils.prefetch_link(next_url)}}
@@ -18,7 +19,7 @@
   <div class="panel panel-default">
     <div class="panel-body">
   # if col_db
-      <a class="btn btn-sm btn-primary" href="{{url_for('waypoint_update', collection=col_db.key.urlsafe())}}">
+      <a class="btn btn-sm btn-primary" href="{{url_for('waypoint_update', col_id=col_db.key.id())}}">
         <span class="fa fa-fw fa-user-plus"></span> New Waypoint
       </a>
   # endif
@@ -43,11 +44,18 @@
         {{utils.filter_by_link('active', True, 'thumbs-o-up')}}
         {{utils.filter_by_link('active', False, 'thumbs-o-down')}}
       </div>
+      <div class="btn-group btn-group-sm">
+        <a href="{{url_for('waypoint_list', order=param('order'))}}" class="btn btn-primary" role="button" title="Remove all filters">
+          No Filter
+        </a>
+      </div>
     ##<div class="btn-group btn-group-sm">
       ##<button type="button" class="btn btn-info" disabled>Tag</button>
       <div class="">
       # for tag in tag_dbs
-        {{utils_tag.filter_by_link_tag('tags', tag_db=tag,is_list=True)}}
+        # if tag.count > 0
+         {{utils_tag.filter_by_link_tag('tags', tag_db=tag,is_list=True)}}
+        # endif
       # endfor
       </div>
     </div>
@@ -60,7 +68,7 @@
       </div>
     </a>
     <div id="panel-map" class="panel-collapse ">
-      <div class="panel-body map-container" style="height:350px">
+      <div class="panel-body map-container" style="height:550px">
         <div id="map" class="map"></div>
       </div>
     </div>
@@ -97,16 +105,18 @@
       <tbody>
         # for db in pt_dbs
           <tr id="{{db.key.urlsafe()}}" class="row-link {{'text-muted' if not db.active}}" 
-             data-href="{{url_for('waypoint_update', collection=db.collection,
+             data-href="{{url_for('waypoint_update', col_id=db.collection.id(),
              waypoint_id=db.key.id())}}" >
-            <td class="name">
+            <td class="name waypoint-info">
               ##<label class="not-link">
                 ##<input type="checkbox" name="db" value="{{db.key.urlsafe()}}">
               ##</label>
-            <span>{{db.name}}</span>
+            <strong>{{db.name}}</strong>
             <br>
-            <small class="text-warning">{{db.description}}</small>
-            <br>
+            # if db.description
+             <small class="text-warning">{{db.description}}</small>
+             <br>
+            # endif
             ## set tag_dbs, more = db.get_tags(6)
             # for tag in db.tags
             <a class="label label-info"
@@ -117,8 +127,8 @@
             # if false
             <span class="label label-default" >...</span>
             # endif
-              <br>
-              ##<span class="text-success small"> {{db.replaced_by.urlsafe()}} </span>
+            <div class="geo-point hidden">{{db.geo}}</div>
+            <div class="point-edit-url hidden">{{url_for('waypoint_update', col_id=db.collection.id(), waypoint_id=db.key.id())}}</div>
             </td>
             <td>
               <time datetime="{{db.modified}}">
@@ -150,15 +160,12 @@
                 {{db.geo.lon}}<br>
               </a>
             </small>
-            <div class="geo-point hidden">{{db.geo}}</div>
             <span class="fa fa-external-link"></span>
             <span class="fa fa-globe"></span>
             </td>
             <td>
-              <a href="{{update_query_argument('collection', db.collection)}}" class="">
-                <span class="fa fa-filter"></span>
-              </a>
-              <span class=small>{{db.collection}}</span>
+              # set col_basic = db.get_collection_basic()
+              {{col_utils.show_collection_details(col_basic,db.has_permission())}}
             </td>
           </tr>
         # endfor

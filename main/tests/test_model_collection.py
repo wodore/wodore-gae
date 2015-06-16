@@ -3,7 +3,8 @@ import sys, os
 #import logging
 import unittest
 
-from google.appengine.ext import ndb#, testbed
+from google.appengine.ext import ndb #, testbed
+from google.appengine.api import datastore_errors
 
 class TestCollection(unittest.TestCase):
   # enable the datastore stub
@@ -59,7 +60,7 @@ class TestCollection(unittest.TestCase):
     model.Collection.create(name='C2',creator=ndb.Key('User','one'))
     model.Collection.create(name='C3',creator=ndb.Key('User','two'),public=True)
     model.Collection.create(name='C4',creator=ndb.Key('User','two'))
-    model.Collection.create(name='C4',creator=ndb.Key('User','three'))
+    model.Collection.create(name='C4',creator=ndb.Key('User','three'),private=True)
     model.Collection.create(name='C4',creator=ndb.Key('User','three'),active=False)
     dbs = model.Collection.qry().fetch()
     #model.Collection.print_list(dbs)
@@ -71,6 +72,9 @@ class TestCollection(unittest.TestCase):
     #model.Collection.print_list(dbs)
     self.assertEqual(len(dbs), 1)
     dbs = model.Collection.qry(public=True).fetch()
+    #model.Collection.print_list(dbs)
+    self.assertEqual(len(dbs), 1)
+    dbs = model.Collection.qry(private=True).fetch()
     #model.Collection.print_list(dbs)
     self.assertEqual(len(dbs), 1)
     dbs = model.Collection.qry(creator=ndb.Key('User','two')).fetch()
@@ -164,6 +168,9 @@ class TestCollection(unittest.TestCase):
     self.assertTrue(perm)
     perm = model.Collection.has_permission(key1,ndb.Key('User','three'),'none',True)
     self.assertFalse(perm)
+    # see if permission is given back if the permission arg is ommited
+    perm = model.Collection.has_permission(key1,ndb.Key('User','three'))
+    self.assertEqual(perm, 'read')
 
 
   def test_update_collection_user(self):
@@ -191,6 +198,53 @@ class TestCollection(unittest.TestCase):
     self.assertEqual(usr_dbs[0].user_name, "New User One")
     self.assertEqual(usr_dbs[2].user_name, "New User One")
 
+
+
+
+class TestAddCollectiondModel(unittest.TestCase):
+
+  # enable the datastore stub
+  nosegae_datastore_v3 = True
+  nosegae_memcache = True
+
+  def setUp(self):
+    global config
+    global model
+    import config
+    import model
+
+    global TestCollectionModel
+    class TestCollectionModel(model.AddCollection, ndb.Model):
+      """This is a test class for with added collection
+      """
+      name = ndb.StringProperty()
+
+
+  def tearDown(self):
+    pass
+
+
+  def test_add_collection_init(self):
+    col1 = TestCollectionModel(name="X")
+    key1 = col1.put()
+    col1_db = key1.get()
+    assert col1_db.collection is not None
+    self.assertEqual(col1_db.collection,model.Collection.top_key())
+    self.assertEqual(col1_db.collection.id(),model.Collection.top_keyname())
+
+    col2 = TestCollectionModel(name="Y")
+    with self.assertRaises(datastore_errors.BadValueError):
+      col2.collection = 'NotAKey'
+      key2 = col2.put()
+    col2.collection = ndb.Key('Collection','Key')
+    key2 = col2.put()
+    col2_db = key2.get()
+    self.assertEqual(col2_db.collection, ndb.Key('Collection','Key'))
+    # test toplevel property
+    col2.toplevel = key1
+    key2 = col2.put()
+    col2_db = key2.get()
+    self.assertEqual(col2_db.toplevel, key1)
 
 
 

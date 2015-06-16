@@ -19,7 +19,8 @@
         #else
         <h4><span class="fa fa-globe"> global </span></h4>
         # endif
-        {{forms.text_field(form.collection)}}
+        <span class="label label-danger">Collection ID</span>
+          {{col_db.key.id()}}<br>
         {{forms.text_field(form.name, autofocus=True)}}
         {{forms.text_field(form.description)}}
         {{forms.text_field(form.url)}}
@@ -37,7 +38,7 @@
             ## set rel_dbs, more = pt_db.related(500,50)
             # for tag in pt_db.tags
             <a class="label label-info" 
-              href="{{url_for('tag_update',collection=pt_db.collection,tag=tag)}}">
+              href="{{url_for('tag_update',col_id=pt_db.collection.id(),tag=tag)}}">
               <span>{{tag}}<span></a>&nbsp;
             # endfor
             # if false

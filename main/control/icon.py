@@ -21,11 +21,11 @@ from main import app
 ###############################################################################
 # Return Icon
 ###############################################################################
-@app.route('/icon/<icon_key>')
+@app.route('/icon/<int:icon_id>')
 @auth.login_required
-def show_icon(icon_key):
+def show_icon(icon_id):
   #print icon_keyy
-  response = flask.make_response(ndb.Key(urlsafe=icon_key).get().icon.data)
+  response = flask.make_response(model.Icon.get_by_id(icon_id).icon)
   response.content_type = 'image/svg+xml'
 #TODO caching
   #response.headers['Cache-Control'] = 'public, max-age='+str(60*60*24) # in secs (1d)
@@ -87,7 +87,7 @@ def icon_update(collection=None, icon_key=None):
   if collection and collection!='global':
     col_db = ndb.Key(urlsafe=collection).get()
   else:
-    collection = 'global'
+    collection = model.Collection.top_key()
     col_db = None
   if icon_key:
     icon_db = icon_key.get()
@@ -99,14 +99,11 @@ def icon_update(collection=None, icon_key=None):
   if form.validate_on_submit():
     fs = flask.request.files.getlist("icon")
     if fs:
-      icon_struct = model.IconStructure(data=fs[0].read())
+      icon= data=fs[0].read()
     else:
       icon_struct=None
 # TODO
-    model.Icon.add(form.name.data,collection=collection,icon_key=icon_key,
-      icon_structure=icon_struct,color=form.color.data,
-      force_new_icon=form.force_icon.data,
-      auto_incr=form.incr_counter.data)
+    model.Icon.create(icon, form.name.data,collection=collection)
 
     # get user key
     return flask.redirect(flask.url_for(
@@ -120,7 +117,7 @@ def icon_update(collection=None, icon_key=None):
       form=form,
       collection=collection,
       col_db=col_db,
-      tag_db=tag_db,
+      icon_db=icon_db,
       api_url=None#flask.url_for('api.user', col_key=col_db.key.urlsafe()) if col_db.key else ''
     )
 

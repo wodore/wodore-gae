@@ -1,5 +1,6 @@
 # extends 'admin/admin_base.html'
 # import 'macro/utils.html' as utils
+# import 'macro/utils_collection.html' as col_utils
 
 # block head
   {{utils.prefetch_link(next_url)}}
@@ -17,7 +18,16 @@
   <div class="panel panel-default">
     <div class="panel-body">
       <a class="btn btn-sm btn-primary" href="{{url_for('tag_update')}}">
-        <span class="fa fa-fw fa-user-plus"></span> New Tag
+        <span class="fa fa-fw fa-plus-square"></span> New Tag
+      </a>
+  # if col_db
+      <a class="btn btn-sm btn-success" href="{{url_for('tag_update',col_id=col_db.key.id())}}">
+       <span class="fa fa-fw fa-plus-square"></span>
+       <span class="">Tag for </span>
+       <span class="label label-warning">
+       {{col_db.name}}
+       </span>
+  # endif
       </a>
 
       <div class="btn-group btn-group-sm">
@@ -30,15 +40,25 @@
       </div>
 
       <div class="btn-group btn-group-sm">
-        <button type="button" class="btn btn-success" disabled>Public</button>
-        {{utils.filter_by_link('public', True, 'thumbs-o-up')}}
-        {{utils.filter_by_link('public', False, 'thumbs-o-down')}}
+        <button type="button" class="btn btn-success" disabled>Approved</button>
+        {{utils.filter_by_link('approved', True, 'thumbs-o-up')}}
+        {{utils.filter_by_link('approved', False, 'thumbs-o-down')}}
       </div>
 
       <div class="btn-group btn-group-sm">
-        <button type="button" class="btn btn-info" disabled>Active</button>
-        {{utils.filter_by_link('active', True, 'thumbs-o-up')}}
-        {{utils.filter_by_link('active', False, 'thumbs-o-down')}}
+        <button type="button" class="btn btn-info" disabled>Only</button>
+        {{utils.filter_by_link('col_id', 'global', 'globe')}}
+      </div>
+      <div class="btn-group btn-group-sm">
+        <button type="button" class="btn btn-warning" disabled>Category</button>
+        {{utils.filter_by_link('category', 'level', is_list=True)}}
+        {{utils.filter_by_link('category', 'waypoint', is_list=True)}}
+        {{utils.filter_by_link('category', 'route', is_list=True)}}
+      </div>
+      <div class="btn-group btn-group-sm">
+        <a href="{{url_for('tag_list', order=param('order'))}}" class="btn btn-primary" role="button" title="Remove all filters">
+          No Filter
+        </a>
       </div>
     </div>
   </div>
@@ -66,25 +86,28 @@
         # for db in tag_dbs
           <tr id="{{db.key.urlsafe()}}" class="{{'text-muted' if not db.active}}" >
             <td class="name">
+             <h4>
               ##<label class="not-link">
                 ##<input type="checkbox" name="db" value="{{db.key.urlsafe()}}">
               ##</label>
             <a class="label label-info" 
-              href="{{url_for('tag_update',collection=db.collection,tag=db.name)}}"
+              href="{{url_for('tag_update',col_id=db.collection.id(),tag=db.name)}}"
               style="background-color:{{db.color}}">
             <span>{{db.name}}</span>
             </a>&nbsp;
+            <small>
             # set rel_dbs, more = db.related(20)
             # for rel_db in rel_dbs
             <a class="label label-info" 
-              href="{{url_for('tag_update',collection=db.collection,tag=rel_db.related_to)}}">
+              href="{{url_for('tag_update',col_id=db.collection.id(),tag=rel_db.related_to)}}">
               <span>{{rel_db.related_to}}<span></a>&nbsp;
             # endfor
             # if more
             <span class="label label-default" >...</span>
             # endif
-              <br>
-              <span class="text-success small"> {{db.color}} </span>
+             </small>
+             </h4>
+              <span class="text-info small"> {{db.color}} </span>
             </td>
             <td>
               <time datetime="{{db.modified}}">
@@ -95,16 +118,15 @@
               </time>
             </td>
             <td>
-              # set icon=db.get_icon_key()
-              # if icon
-              <a href="/icon/{{icon.urlsafe()}}" target="_blank" style="display: block;">
-                <object type="image/svg+xml" data="/icon/{{icon.urlsafe()}}" class="icon"
-                style="width:30px;height:30px;pointer-events: none;"   >
+              # set icon_id=db.get_icon_id()
+              # if icon_id
+              <a href="/icon/{{icon_id}}" target="_blank" style="display: block;">
+                <object type="image/svg+xml" data="/icon/{{icon_id}}" class="icon"
+                style="width:40px;height:40px;pointer-events: none;"   >
                   <span class="label label-warning">No SVG support<span> <!-- fallback image in CSS -->
                 </object>
               </a>
-              <br>
-              <small class="text-info">{{icon.urlsafe()}}</small>
+              <small class="text-info">{{icon_id}}</small>
               # else
               <span class=small>add icon</span>
               # endif
@@ -113,14 +135,12 @@
               <a href="{{url_for('collection_user_list',collection=db.key.urlsafe(),order='-modified' )}}" class="">
                 {{db.count}} <span class="fa fa-link"></span>
               </a>
-            </td>
-            <td>
-              <a href="{{update_query_argument('collection', db.collection)}}" class="">
-                <span class="fa fa-filter"></span>
-              </a>
-              <span class=small>{{db.collection}}</span>
-            </td>
-          </tr>
+             </td>
+             <td>
+              # set col_basic = db.get_collection_basic()
+              {{col_utils.show_collection_details(col_basic,db.has_permission())}}
+             </td>
+            </tr>
         # endfor
       </tbody>
     </table>

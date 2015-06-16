@@ -61,12 +61,6 @@ def get_dbs(
   limit = limit or config.DEFAULT_DB_LIMIT
   cursor = Cursor.from_websafe_string(cursor) if cursor else None
   model_class = ndb.Model._kind_map[query.kind]
-  if order:
-    for o in order.split(','):
-      if o.startswith('-'):
-        query = query.order(-model_class._properties[o[1:]])
-      else:
-        query = query.order(model_class._properties[o])
 
   for prop in filters:
     if filters.get(prop, None) is None:
@@ -74,9 +68,39 @@ def get_dbs(
     if isinstance(filters[prop], list):
       for value in filters[prop]:
         query = query.filter(model_class._properties[prop] == value)
+# new custom wodor app -------------
+    elif isinstance(filters[prop], dict):
+      if filters[prop]['test'] == '>':
+        query = query.filter(model_class._properties[prop] > filters[prop]['value'])
+      elif filters[prop]['test'] == '>=':
+        query = query.filter(model_class._properties[prop] >= filters[prop]['value'])
+      elif filters[prop]['test'] == '<':
+        query = query.filter(model_class._properties[prop] < filters[prop]['value'])
+      elif filters[prop]['test'] == '<=':
+        query = query.filter(model_class._properties[prop] < filters[prop]['value'])
+      elif filters[prop]['test'] == '==':
+        query = query.filter(model_class._properties[prop] == filters[prop]['value'])
+      elif filters[prop]['test'] == '!=':
+        query = query.filter(model_class._properties[prop] != filters[prop]['value'])
+      elif filters[prop]['test'] == 'IN':
+        values = filters[prop]['value']
+        if isinstance(values, list):
+          values = filters[prop]['value']
+        else:
+           values = values.split(',')
+        query = query.filter(model_class._properties[prop].IN(values))
+        query = query.order(model_class._key)
+      query = query.order(model_class._properties[prop]) # TODO does it work?
     else:
       query = query.filter(model_class._properties[prop] == filters[prop])
+# ----------------------------------
 
+  if order:
+    for o in order.split(','):
+      if o.startswith('-'):
+        query = query.order(-model_class._properties[o[1:]])
+      else:
+        query = query.order(model_class._properties[o])
   model_dbs, next_cursor, more = query.fetch_page(
       limit, start_cursor=cursor, keys_only=keys_only,
     )
@@ -186,6 +210,12 @@ def update_query_argument(name, value=None, ignore='cursor', is_list=False):
       arguments[name] = value
   query = '&'.join('%s=%s' % item for item in sorted(arguments.items()))
   return '%s%s' % (flask.request.path, '?%s' % query if query else '')
+
+
+def parse_tags(tags, separator=None):
+  if not is_iterable(tags):
+    tags = str(tags.strip()).split(separator or config.TAG_SEPARATOR)
+  return filter(None, sorted(list(set(tags))))
 
 
 ###############################################################################

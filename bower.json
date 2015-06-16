@@ -7,7 +7,12 @@
     "lesshat": "~3",
     "moment": "~2",
     "nprogress": "https://github.com/lipis/nprogress.git#master",
-    "leaflet-layer-overpass": "https://github.com/kartenkarsten/leaflet-layer-overpass.git#v1.0.2"
+    "osmtogeojson" : "https://github.com/tyrasd/osmtogeojson.git#2.2.5",
+    "leaflet-knn" : "https://github.com/mapbox/leaflet-knn.git",
+    "sphere-knn" : "https://github.com/darkskyapp/sphere-knn.git",
+    "Leaflet.FileLayer" : "https://github.com/makinacorpus/Leaflet.FileLayer.git",
+    "leaflet.markercluster" : "latest",
+    "leaflet-editable-polyline" : "https://github.com/tkrajina/leaflet-editable-polyline.git"
 
   },
   "overrides": {
@@ -19,6 +24,26 @@
     },
     "leaflet-layer-overpass": {
       "main": ["dist/*"]
+    } ,
+    "leaflet.markercluster": {
+      "main": ["dist/*"]
+    },
+    "leaflet-editable-polyline": {
+      "main": ["src/*"]
+    },
+    "leaflet-knn": {
+      "main": ["index.js", "leaflet-knn.js"]
+    },
+    "sphere-knn": {
+      "main": ["index.js", "lib/*"]
+    },
+    "osmtogeojson": {
+      "main": ["index.js","lodash.custom.js","polygon_features.json","osmtogeojson.js"]
+    },
+    "Leaflet.FileLayer": {
+      "dependencies": {
+        "togeojson" : "https://github.com/mapbox/togeojson.git"
+      }
     }
   }
 }

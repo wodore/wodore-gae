@@ -1,5 +1,6 @@
 from google.appengine.ext import ndb
 
+import util
 
 class CountableLazy(object):
   """A mixin that adds countability to a class.
@@ -44,6 +45,29 @@ class CountableLazy(object):
       top.put()
     self.cnt += self._incr
     self._incr = 0
+
+  @classmethod
+  def get_counter_dbs(
+      cls, cnt=None, count=None, **kwargs
+    ):
+    """ Call this function when 'CountableLazy' is used in the 'get_dbs' function.
+    """
+    cnt = cnt or count or \
+     util.param('cnt') or util.param('count')
+    if str(cnt).isdigit():
+      cnt = int(cnt)
+    elif cnt:
+      cnt = cnt.split(':')
+      if cnt[0] != 'IN':
+        value = int(cnt[1])
+      else:
+        value = [int(i) for i in cnt[1].split(',')]
+      cnt_dic = {"test" : cnt[0],
+        "value" : value}
+      kwargs["cnt"] = cnt_dic
+      return kwargs
+    kwargs["cnt"] = int(cnt) if str(cnt).isdigit() else cnt
+    return kwargs
 
 
 

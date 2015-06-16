@@ -8,7 +8,8 @@ import util
 import config
 
 from .counter import CountableLazy
-from .icon import IconStructure, Iconize
+from .icon import Iconize
+from .collection import Collection, AddCollection
 
 """
 A tag consists of three model classes:
@@ -21,7 +22,7 @@ For each tag exists a toplevel tag which can have children grouped by a collecti
 Once a tag is created it should not be changed anymore.
 If one of the children's counter is updated the topevel tag counter is updated
 as well.
-The highest toplevel has the default collection 'global'.
+The highest toplevel has the default collection Collection.top_key().
 A tag key look as follow : 'tag__{name}_{collection}'.
 """
 
@@ -30,25 +31,48 @@ class TagStructure(ndb.Model): # use the counter mixin
   """Basic tag class
   """
   #tag_key = ndb.KeyProperty(required=False)
-  icon = ndb.StructuredProperty(IconStructure)
+  icon_id = ndb.IntegerProperty(indexed=True,required=True,default=0)
+# dont use icon strucutre any more, only link to icon
+# TODO detel icon!
+  #icon = ndb.StructuredProperty(IconStructure)
   name = ndb.StringProperty(indexed=True,required=True)
   color = ndb.StringProperty(indexed=True,required=True)
 
-class Tag(Iconize, CountableLazy, model.Base):
+class Tag(Iconize, CountableLazy, AddCollection, model.Base):
   """Tag Model
   The key should have the following from: tag__{name}_{collection}"""
-  name = ndb.StringProperty(indexed=True,required=True, validator=lambda p, v: v.lower())
+
+  def _validate_tag(p,v):
+    """ Internal validate method, see below """
+    return Tag.validate_tag(v)
+
+# only names longer than 4 chars are saved as lower chars
+  name = ndb.StringProperty(indexed=True,required=True,
+    validator=_validate_tag )
+
   color = ndb.StringProperty(indexed=True,required=True,default='blue')
   approved = ndb.BooleanProperty(required=True,default=False)
-  #created = ndb.DateTimeProperty(auto_now_add=True)
-  #modified = ndb.DateTimeProperty(auto_now=True)
-  # Preferred urlsafe keys
-  collection = ndb.StringProperty(required=True, indexed=True,
-                  default='global')#, validator=lambda p, v: v.lower())
-  # Key to the parent (or toplevel) entry. If empty it is already the toplevel,
-  # usually the collection 'global'
-  toplevel = ndb.KeyProperty()
-  #replaced_by = ndb.KeyProperty() # if the icon should not be used anymore
+# category can be sofar: 'level', 'waypoint' , 'route'
+  category = ndb.StringProperty(indexed=True,repeated=True,\
+    choices=['level','waypoint','route'])
+
+
+  @classmethod
+  def validate_tag(cls,tag):
+    """ Validates and proccesses a tag name:
+     strip it and lower it if shorther than 4 letters.
+     'tag' can also be a list with tags!
+    """
+    if not tag:
+      return None
+    if isinstance(tag,list) or isinstance(tag,tuple):
+      tags = []
+      for t in tag:
+        tags.append(cls.validate_tag(t))
+      return tags
+    return tag.lower().strip() if len(tag) > 4 else tag.strip()
+
+
 
   def get_tag(self):
     """ Returns a TagStructure.
@@ -59,11 +83,12 @@ class Tag(Iconize, CountableLazy, model.Base):
     #if self.key is None:
       #raise UserWarning("Key not set yet, use first 'put()' before you use this method.")
     #self.icon.icon_key = self.key
-    return TagStructure(name=self.name,icon=getattr(self,'icon',None) \
-        ,color=self.color)
+# TODO detel icon!
+    return TagStructure(name=self.name,\
+        color=self.color,icon_id=getattr(self,'icon_id'))
 
+  # TODO write tests
   def related(self,char_limit=15,word_limit=None,char_space=4):
-
     word_limit = word_limit or int(char_limit/5)+3
     dbs, cursor = model.TagRelation.get_dbs(tag_name=self.name,\
         collection=self.collection,limit=word_limit,\
@@ -83,22 +108,15 @@ class Tag(Iconize, CountableLazy, model.Base):
       new_dbs.append(db)
     if char_cnt > char_limit+int(char_space*2):
       del new_dbs[-1]
+      more=True
 
-    #if len(dbs) > word_limit:
-      #more = True
-    #else:
-      #more = False
-    #print char_cnt
-    #if more and char_cnt > char_limit:
-      #return dbs[:-2], more
-    #else:
     return new_dbs, more
 
   @staticmethod
   def tag_to_keyname(name,collection=None):
     """Returns a key name (string)"""
-    col = collection or 'global'
-    return "tag__{}_{}".format(name.lower(), col)
+    col = collection or Collection.top_key()
+    return "tag__{}_{}".format(name.lower(), col.id())
 
   @staticmethod
   def tag_to_key(name, collection=None):
@@ -113,8 +131,9 @@ class Tag(Iconize, CountableLazy, model.Base):
     return tagnames
 
   @classmethod
-  def add(cls,name,collection=None, toplevel_key=None, icon_key=None, \
-      icon_structure=None, color=None, force_new_icon=False, auto_incr=True):
+  def add(cls,name,collection=None, toplevel_key=None, icon_data=None, \
+      icon_id=None, icon_key=None, color=None, force_new_icon=False, auto_incr=True,
+      approved=False):
     """ Add a tag, if it not exists create one.
 
     If an 'icon_strucuture' is given a new icon is created for the icon DB,
@@ -123,39 +142,43 @@ class Tag(Iconize, CountableLazy, model.Base):
     An icon can only be added once, except 'force_new_icon' is 'True'
     This method already 'put()'s the tag to the DB.
       """
-    col = collection or 'global'
+    name = cls.validate_tag(name)
+    col = collection or Collection.top_key()
     #key = ndb.Key('Tag','tag_{}_{}'.format(name,col))
     #print key
     tag_db = Tag.get_or_insert(Tag.tag_to_keyname(name,col),\
-        name=name.lower(),collection=col)
-    if col != 'global' and not toplevel_key:
-      tag_db.toplevel = Tag.tag_to_key(name,'global')
-      top_db = Tag.get_or_insert(Tag.tag_to_keyname(name,'global'),\
-        name=name.lower(),collection='global')
+        name=name,collection=col)
+    if col != Collection.top_key() and not toplevel_key:
+      tag_db.toplevel = Tag.tag_to_key(name,Collection.top_key())
+      top_db = Tag.get_or_insert(Tag.tag_to_keyname(name,Collection.top_key()),\
+        name=name,collection=Collection.top_key())
       top_db.put()
     elif toplevel_key:
       tag_db.toplevel = toplevel_key
     if auto_incr:
       tag_db.incr()
     # check if icon already exists
-    if not tag_db.get_tag().icon or force_new_icon:
-      if icon_key:
-        tag_db.add_icon(icon_key)
-      elif icon_structure:
-        tag_db.create_icon(icon_structure,name.lower())
+    if not tag_db.get_tag().icon_id or force_new_icon:
+      if icon_key or icon_id:
+        key = model.Icon.id_to_key(icon_id) if icon_id else icon_key
+        tag_db.add_icon(key=key)
+      elif icon_data:
+        tag_db.create_icon(icon_data,name)
     if color:
       tag_db.color = color
+    tag_db.approved=approved
     return tag_db.put()
 
   @classmethod
   def remove(cls,name,collection=None):
     """Removes a tag by its name"""
 # TODO Should it also work with a key??
-    col = collection or 'global'
+    name = cls.validate_tag(name)
+    col = collection or Collection.top_key()
     tag_db = Tag.tag_to_key(name,col).get()
     if tag_db:
       tag_db.decr()
-      if tag_db.get_tag().icon:
+      if tag_db.get_tag().icon_id:
         tag_db.remove_icon()
       return tag_db.put()
     else:
@@ -164,7 +187,8 @@ class Tag(Iconize, CountableLazy, model.Base):
   @classmethod
   def approve(cls,name,collection=None,approved=True):
     """The method approves a tag, by default only global tags need improvement"""
-    col = collection or 'global'
+    name = cls.validate_tag(name)
+    col = collection or Collection.top_key()
     tag_db = Tag.tag_to_key(name,col).get()
     tag_db.approved=approved
     return tag_db.put()
@@ -180,7 +204,7 @@ class Tag(Iconize, CountableLazy, model.Base):
       qry = qry.filter(cls.toplevel==toplevel)
     if name:
       qry_tmp = qry
-      qry = qry.filter(cls.name==name.lower())
+      qry = qry.filter(cls.name==cls.validate_tag(name))
     if collection:
       qry_tmp = qry
       qry = qry.filter(cls.collection == collection)
@@ -195,15 +219,17 @@ class Tag(Iconize, CountableLazy, model.Base):
 
   @classmethod
   def get_dbs(
-      cls, name=None, color=None, approved=None, collection=None,
-      toplevel=None, **kwargs
+      cls, name=None, color=None, approved=None,
+      **kwargs
     ):
+    kwargs = cls.get_col_dbs(**kwargs)
+    kwargs = cls.get_counter_dbs(**kwargs)
+    name=name or util.param('name', str)
+    name=cls.validate_tag(name)
     return super(Tag, cls).get_dbs(
-        name=name or util.param('name', str),
+        name=name,
         color=color or util.param('color', str),
         approved=approved or util.param('approved', bool),
-        collection=collection or util.param('collection', str),
-        toplevel=toplevel or util.param('toplevel', ndb.Key),
         **kwargs
       )
 
@@ -221,14 +247,14 @@ class Tag(Iconize, CountableLazy, model.Base):
     for db in dbs:
       print "| {:<18}| {:<18}| {:<18}| {:<18}| {:<10}| {:<18}| {:<38}|".\
           format(db.name, db.collection, \
-          getattr(db.icon,"icon_key",""), db.color, db.count, db.approved, db.toplevel or "")
+          getattr(db.icon_id,"icon_key",""), db.color, db.count, db.approved, db.toplevel or "")
     print "+-------------------+-------------------+-------------------"\
         +"+-------------------+-----------+-------------------+"\
         +"---------------------------------------+"
     print
     print
 
-class TagRelation(CountableLazy, model.Base): # use the counter mixin
+class TagRelation(CountableLazy, AddCollection, model.Base): # use the counter mixin
   """Tag relation model
   Saves all relation between tags with a counter.
   Can be used for tag suggestions.
@@ -237,16 +263,13 @@ class TagRelation(CountableLazy, model.Base): # use the counter mixin
   """
   tag_name = ndb.StringProperty(indexed=True,required=True)
   related_to = ndb.StringProperty(indexed=True,required=True)
-  collection = ndb.StringProperty(indexed=True,required=True,default='global')
-  toplevel = ndb.KeyProperty()
-  #created = ndb.DateTimeProperty(auto_now_add=True)
-  #modified = ndb.DateTimeProperty(auto_now=True)
 
   @staticmethod
   def to_keyname(tag_name,related_to,collection=None):
     """Returns a key name (string)"""
-    col = collection or 'global'
-    return "tagrel__{}_{}_{}".format(tag_name.lower(),related_to.lower(), col)
+    col = collection or Collection.top_key()
+    return "tagrel__{}_{}_{}".format(Tag.validate_tag(tag_name),\
+         Tag.validate_tag(related_to), col.id())
 
   @staticmethod
   def from_keyname(keyname):
@@ -254,7 +277,11 @@ class TagRelation(CountableLazy, model.Base): # use the counter mixin
     names = keyname.split('_')
     tag_name = names[2]
     related_to = names[3]
-    collection = names[4]
+    col_id = names[4]
+    if col_id.isdigit():
+      collection = ndb.Key('Collection',int(col_id))
+    else:
+      collection = ndb.Key('Collection',col_id)
     return tag_name, related_to, collection
 
   @classmethod
@@ -300,11 +327,11 @@ class TagRelation(CountableLazy, model.Base): # use the counter mixin
         tag_name, related_to, collection = cls.from_key(key)
         db = cls.get_or_insert(key.id(),tag_name=tag_name,related_to=related_to,\
             collection=collection,cnt=0)
-        if collection != 'global':
-          top_key = cls.to_key(tag_name,related_to,'global')
+        if collection != Collection.top_key():
+          top_key = cls.to_key(tag_name,related_to,Collection.top_key())
           db.toplevel = top_key
           cls.get_or_insert(top_key.id(),tag_name=tag_name,related_to=related_to,\
-            collection='global',cnt=0)
+            collection=Collection.top_key(),cnt=0)
       db.incr(_incr_step)
 
 
@@ -320,20 +347,22 @@ class TagRelation(CountableLazy, model.Base): # use the counter mixin
     return ndb.put_multi(dbs_new)
 
   @classmethod
-  def add(cls, tag_names, collection=None):
+  def add(cls, tag_names, collection=None,_incr_step=1):
     """Add relations by a tag list"""
     if not tag_names:
       return []
     keys = TagRelation.generate_all_keys(tag_names,collection)
+    tag_names=Tag.validate_tag(tag_names)
     #print "Keys to add for relation"
     #print keys
-    return cls.add_by_keys(keys)
+    return cls.add_by_keys(keys,_incr_step)
 
   @classmethod
   def remove(cls, tag_names, collection=None):
     """Remove relations by a tag list"""
     if not tag_names:
       return []
+    tag_names=Tag.validate_tag(tag_names)
     keys = TagRelation.generate_all_keys(tag_names,collection)
     cls.add_by_keys(keys,_incr_step=-1)
     return keys
@@ -378,14 +407,13 @@ class TagRelation(CountableLazy, model.Base): # use the counter mixin
 
   @classmethod
   def get_dbs(
-      cls, tag_name=None, related_to=None, collection=None,
-      toplevel=None, **kwargs
+      cls, tag_name=None, related_to=None,**kwargs
     ):
+    kwargs = cls.get_col_dbs(**kwargs)
+    kwargs = cls.get_counter_dbs(**kwargs)
     return super(TagRelation, cls).get_dbs(
         tag_name=tag_name or util.param('tag_name', str),
         related_to=related_to or util.param('related_to', bool),
-        collection=collection or util.param('collection', str),
-        toplevel=toplevel or util.param('toplevel', ndb.Key),
         **kwargs
       )
 
@@ -404,7 +432,7 @@ class Taggable(ndb.Model): # use the counter mixin
   #tags = ndb.StringProperty(TagStructure, repeated=True)
   tags = ndb.StringProperty(indexed=True, repeated=True,
       validator=lambda p, v: v.lower())
-  _MAX_TAGS = 20
+  _MAX_TAGS = 20 # TODO config option
   #_new_tags = []
 
   def add_tags(self, tags):
@@ -415,7 +443,7 @@ class Taggable(ndb.Model): # use the counter mixin
 # TODO if icon changes it could give double entries, not good!
     new_tags = []
     if not getattr(self,'collection',None):
-      col = 'global'
+      col = Collection.top_key()
     else:
       col = self.collection
     if getattr(self,'tags',None):
@@ -455,7 +483,7 @@ class Taggable(ndb.Model): # use the counter mixin
     rm_tags = []
     new_tags = []
     if not getattr(self,'collection',None):
-      col = 'global'
+      col = Collection.top_key()
     else:
       col = self.collection
     if not getattr(self,'tags',None):
@@ -518,4 +546,15 @@ class Taggable(ndb.Model): # use the counter mixin
 
     self.tags = tags
     return self.tags
+
+
+  @classmethod
+  def get_tag_dbs(
+      cls, tags=None, **kwargs
+    ):
+    """ Call this function when 'AddCollection' is used int the 'get_dbs' function.
+    """
+    tags = tags or util.param('tags',list)
+    kwargs["tags"] = tags
+    return kwargs
 

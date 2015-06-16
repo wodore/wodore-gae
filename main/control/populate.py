@@ -78,7 +78,10 @@ def admin_populate_user():
           active=_return_state(form_user.active.data),
           admin=_return_state(form_user.admin.data),
           verified=_return_state(form_user.verified.data)))
-    ndb.put_multi(user_dbs)
+    keys = ndb.put_multi(user_dbs)
+    for key in keys:
+      # run the new user function
+      auth.new_user(key)
     flask.flash('Created {nr} new users'.\
           format(nr=len(user_dbs)), category='success')
   return flask.redirect(flask.url_for('admin_populate'))
@@ -154,7 +157,7 @@ def admin_populate_collection_user():
     user_keys = model.User.query().fetch(limit=5000, keys_only=True)
     cnt = 0
     cnt_users = 0
-    for key in model.Collection.qry()\
+    for key in model.Collection.qry(private=False,public=False)\
         .fetch(keys_only=True, limit=form_col_user.max_collections.data):
       user_nr = int(form_col_user.user_min.data+\
           random.random()*(form_col_user.user_max.data-form_col_user.user_min.data))
@@ -196,7 +199,7 @@ def admin_populate_tag():
       tags = form_tag.tags.data.split(', ')
     # Are icon needed as well?
     if form_tag.icon.data:
-      icon_keys, _ = model.Icon.get_dbs(keys_only=True,limit=2000, collection='global')
+      icon_keys, _ = model.Icon.get_dbs(keys_only=True,limit=2000, collection=model.Collection.top_key())
     else:
       icon_keys = None
     cnt = 0
@@ -222,7 +225,7 @@ def admin_populate_icon():
     fs = flask.request.files.getlist("icon")
     cnt = 0
     for f in fs:
-      icon = model.IconStructure(data=f.read())
+      icon = f.read()
       model.Icon.create(icon=icon,
           name=f.filename.split('.')[0])
       names += f.filename.split('.')[0]+" "
@@ -268,7 +271,8 @@ def admin_populate_waypoint():
     if form_waypoint.tags.data == "list":
       tag_list = form_waypoint.tag_list.data.split(', ')
     elif form_waypoint.tags.data == "random":
-      tag_dbs = model.Tag.qry(collection='global').fetch(limit=10000)
+      #tag_dbs = model.Tag.qry(collection=model.Collection.top_key()).fetch(limit=10000)
+      tag_dbs, _ = model.Tag.get_dbs(collection=model.Collection.top_key(), limit=10000)
       tag_list = []
       for db in tag_dbs:
         tag_list.append(db.name)
@@ -286,7 +290,7 @@ def admin_populate_waypoint():
         lat = random.random()*3+45
         lng = random.random()*4 + 6
         geo = ndb.GeoPt(lat,lng)
-        db = model.WayPoint(name=name,description=desc,collection=key.urlsafe(),geo=geo)
+        db = model.WayPoint(name=name,description=desc,collection=key,geo=geo)
         if tag_list:
           tag_nr = int(random.random()*form_waypoint.max_tags.data)
           while tag_nr > len(tag_list):

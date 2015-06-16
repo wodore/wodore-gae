@@ -24,16 +24,18 @@ from main import app
 @app.route('/admin/waypoint')
 @auth.admin_required
 def waypoint_list():
-  col_key = util.param('collection',str)
+  col_id = util.param('col_id')
+  col_key = util.param('collection',ndb.Key)
+  if col_id and not col_key:
+    col_key = model.Collection.id_to_key(col_id)
   if col_key:
-    col_db = ndb.Key(urlsafe=col_key).get()
+    col_db = col_key.get()
   else:
     col_db=None
   pt_dbs, waypoint_cursor = model.WayPoint.get_dbs(collection=col_key)
 # get tags
-  tag_dbs, tag_cursor = model.Tag.get_dbs(collection=col_key or 'global',order='-cnt')
-  for tag in tag_dbs:
-    print tag.name
+  tag_dbs, tag_cursor = model.Tag.get_dbs(collection=col_key or \
+    model.Collection.top_key(),order='-cnt')
   return flask.render_template(
       'waypoint/waypoint_list.html',
       html_class='waypoint-list',
@@ -55,10 +57,10 @@ class WayPointUpdateForm(wtf.Form):
       [wtforms.validators.required()]
     )
 
-  collection = wtforms.StringField(
-      "Collection",
-      [wtforms.validators.required()],
-    )
+  #collection = wtforms.StringField(
+      #"Collection ID",
+      #[wtforms.validators.required()],
+    #)
 
   description = wtforms.StringField( "Description")
   url = wtforms.StringField( "URL")
@@ -70,16 +72,16 @@ class WayPointUpdateForm(wtf.Form):
     super(WayPointUpdateForm, self).__init__(*args, **kwds)
 
 # TODO user waypoint id, like user update!
-@app.route('/admin/waypoint/<collection>/update/<int:waypoint_id>/', methods=['GET', 'POST'])
-@app.route('/admin/waypoint/<collection>/update/', methods=['GET', 'POST'])
+@app.route('/admin/waypoint/<col_id>/update/<int:waypoint_id>/', methods=['GET', 'POST'])
+@app.route('/admin/waypoint/<col_id>/update/', methods=['GET', 'POST'])
 #@app.route('/admin/waypoint/update/', methods=['GET', 'POST'])
 @auth.admin_required
-def waypoint_update(collection=None, waypoint_id=None):
-  collection = collection or util.param('collection')
+def waypoint_update(col_id=None, waypoint_id=None):
+  col_id = col_id or util.param('col_id')
   waypoint_id = waypoint_id or util.param('waypoint_id',int)
 
-  if collection and collection!='global':
-    col_db = ndb.Key(urlsafe=collection).get()
+  if col_id and col_id!=model.Collection.top_id():
+    col_db = model.Collection.id_to_key(col_id).get()
   else:
     flask.flash("Collection is needed.","danger")
     return flask.redirect(flask.url_for(
@@ -88,7 +90,7 @@ def waypoint_update(collection=None, waypoint_id=None):
   if waypoint_id:
     pt_db = model.WayPoint.get_by_id(waypoint_id)
   else:
-    pt_db = model.WayPoint(collection=collection)
+    pt_db = model.WayPoint(collection=col_db.key)
 
   form = WayPointUpdateForm(obj=pt_db)
 
@@ -97,7 +99,7 @@ def waypoint_update(collection=None, waypoint_id=None):
     geo = ndb.GeoPt(form.geo.data)
     tags = map(unicode.strip, form.tags.data.split(','))
     pt_db.name = form.name.data
-    pt_db.collection=collection
+    pt_db.collection=col_db.key
     pt_db.description=form.description.data
     pt_db.url=form.url.data
     pt_db.geo=geo
@@ -106,7 +108,7 @@ def waypoint_update(collection=None, waypoint_id=None):
     pt_db.put()
 
     return flask.redirect(flask.url_for(
-        'waypoint_list', order='-modified', collection=collection
+        'waypoint_list', order='-modified', col_id=col_id
         ))
 
   return flask.render_template(
@@ -114,7 +116,7 @@ def waypoint_update(collection=None, waypoint_id=None):
       title= "Update Waypoint" if pt_db else "Add New Waypoint" ,#col_db or 'Add New Tag',
       html_class='waypoint-update',
       form=form,
-      collection=collection,
+      collection=col_db.key,
       col_db=col_db,
       pt_db=pt_db,
       api_url=None#flask.url_for('api.user', col_key=col_db.key.urlsafe()) if col_db.key else ''

@@ -24,14 +24,16 @@ from main import app
 @app.route('/admin/tag')
 @auth.admin_required
 def tag_list():
-  col_key = util.param('collection',str)
+  col_id = util.param('col_id')
+  col_key = util.param('collection',ndb.Key)
+  if col_id and not col_key:
+    col_key = model.Collection.id_to_key(col_id)
   if col_key:
-    col_db = ndb.Key(urlsafe=col_key).get()
+    col_db = col_key.get()
   else:
     col_db=None
+
   tag_dbs, tag_cursor = model.Tag.get_dbs(collection=col_key)
-  #permissions = list(UserUpdateForm._permission_choices)
-  #permissions += util.param('permissions', list) or []
   return flask.render_template(
       'tag/tag_list.html',
       html_class='tag-list',
@@ -60,8 +62,8 @@ class TagUpdateForm(wtf.Form):
 
   icon  = wtforms.FileField(u'Icon')
 
-  icon_key = wtforms.StringField(
-      "Icon Key",
+  icon_id = wtforms.IntegerField(
+      "Icon ID",
       [wtforms.validators.optional()])
 
   force_icon = wtforms.BooleanField("Force new icon",default=False)
@@ -71,21 +73,22 @@ class TagUpdateForm(wtf.Form):
     super(TagUpdateForm, self).__init__(*args, **kwds)
 
 
-@app.route('/admin/tag/<collection>/update/<tag>', methods=['GET', 'POST'])
-@app.route('/admin/tag/<collection>/update/', methods=['GET', 'POST'])
-@app.route('/admin/tag/update/<tag>', methods=['GET', 'POST'])
+@app.route('/admin/tag/<col_id>/update/<tag>/', methods=['GET', 'POST'])
+@app.route('/admin/tag/<col_id>/update/', methods=['GET', 'POST'])
+@app.route('/admin/tag/update/<tag>/', methods=['GET', 'POST'])
 @app.route('/admin/tag/update/', methods=['GET', 'POST'])
 @auth.admin_required
-def tag_update(collection=None, tag=None):
-  collection = collection or util.param('collection')
+def tag_update(col_id=None, tag=None):
+  col_id = col_id or util.param('col_id')
   tag = tag or util.param('tag')
-  if collection and collection!='global':
-    col_db = ndb.Key(urlsafe=collection).get()
+  if col_id and col_id!=model.Collection.top_id():
+    col_key = model.Collection.id_to_key(col_id)
+    col_db = col_key.get()
   else:
-    collection = 'global'
+    col_key = model.Collection.top_key()
     col_db = None
   if tag:
-    tag_db = model.Tag.tag_to_key(tag,collection).get()
+    tag_db = model.Tag.tag_to_key(tag,col_key).get()
   else:
     tag_db = None
 
@@ -96,25 +99,25 @@ def tag_update(collection=None, tag=None):
     if form.icon.data:
       fs = flask.request.files.getlist("icon")
       if fs:
-        icon_struct = model.IconStructure(data=fs[0].read())
+        icon = data=fs[0].read()
       else:
-        icon_struct=None
+        icon=None
     else:
-      print "No Struct: no icon data"
-      icon_struct=None
-    if form.icon_key.data:
-      icon_key = ndb.Key(urlsafe=form.icon_key.data)
+      icon=None
+    if not form.icon_id.data:
+      #icon_id = ndb.Key(urlsafe=form.icon_key.data)
+      icon_id = None
     else:
-      icon_key = None
+      icon_id = form.icon_id.data
 
-    model.Tag.add(form.name.data,collection=collection,icon_key=icon_key,
-      icon_structure=icon_struct,color=form.color.data,
+    model.Tag.add(form.name.data,collection=col_key,icon_id=icon_id,
+      icon_data=icon,color=form.color.data,
       force_new_icon=form.force_icon.data,
       auto_incr=form.incr_counter.data)
 
     # get user key
     return flask.redirect(flask.url_for(
-        'tag_list', order='-modified'
+        'tag_list', col_id=col_id, order='-modified'
         ))
 
   return flask.render_template(
@@ -122,7 +125,7 @@ def tag_update(collection=None, tag=None):
       title= "Update Tag" if tag_db else "Add New Tag" ,#col_db or 'Add New Tag',
       html_class='tag-update',
       form=form,
-      collection=collection,
+      collection=col_key,
       col_db=col_db,
       tag_db=tag_db,
       api_url=None#flask.url_for('api.user', col_key=col_db.key.urlsafe()) if col_db.key else ''

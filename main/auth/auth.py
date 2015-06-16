@@ -242,7 +242,7 @@ def signup():
             form.email.data,
             form.email.data,
           )
-        user_db.put()
+        user_key = user_db.put()
         task.activate_user_notification(user_db)
         cache.bump_auth_attempt()
         return flask.redirect(flask.url_for('welcome'))
@@ -288,6 +288,7 @@ def urls_for_oauth(next_url):
       'instagram_signin_url': url_for_signin('instagram', next_url),
       'linkedin_signin_url': url_for_signin('linkedin', next_url),
       'microsoft_signin_url': url_for_signin('microsoft', next_url),
+      'reddit_signin_url': url_for_signin('reddit', next_url),
       'twitter_signin_url': url_for_signin('twitter', next_url),
       'vk_signin_url': url_for_signin('vk', next_url),
       'yahoo_signin_url': url_for_signin('yahoo', next_url),
@@ -318,7 +319,7 @@ def save_request_params():
     }
 
 
-def signin_oauth(oauth_app, scheme='http'):
+def signin_oauth(oauth_app, scheme=None):
   try:
     flask.session.pop('oauth_token', None)
     save_request_params()
@@ -350,7 +351,10 @@ def create_user_db(auth_id, name, username, email='', verified=False, **props):
     if len(user_dbs) == 1:
       user_db = user_dbs[0]
       user_db.auth_ids.append(auth_id)
-      user_db.put()
+      user_key = user_db.put()
+
+      new_user(user_key)
+
       task.new_user_notification(user_db)
       return user_db
 
@@ -373,10 +377,18 @@ def create_user_db(auth_id, name, username, email='', verified=False, **props):
       token=util.uuid(),
       **props
     )
-  user_db.put()
+  user_key = user_db.put()
+  # Create user collection
+  new_user(user_key)
   task.new_user_notification(user_db)
+
   return user_db
 
+def new_user(user_key):
+  """ This function is executed when a new user was created """
+  if user_key:
+    user_db = user_key.get()
+    model.Collection.create_or_update_private(creator_db=user_db)
 
 @ndb.toplevel
 def signin_user_db(user_db):

@@ -13,6 +13,7 @@ import util
 import config
 
 from .tag import Taggable#, TagStructure, Tag, TagRelation
+from .collection import Collection, AddCollection
 
 
 class RouteRefStructure(ndb.Model): # use the counter mixin
@@ -38,7 +39,7 @@ class RouteDrawingStructure(ndb.Model): # use the counter mixin
   active = ndb.BooleanProperty(required=True,default=True)
 
 
-class Route(Taggable, model.Base):
+class Route(Taggable, AddCollection, model.Base):
   """Route model.
   The properties are not very well defined yet.
   Not good is still visible, which should show if its includeds other routes or just waypoints).
@@ -46,7 +47,6 @@ class Route(Taggable, model.Base):
   waypoints or a given point.
   """
   name = ndb.StringProperty(required=True)
-  collection = ndb.StringProperty(required=True, indexed=True )
   visible = ndb.StringProperty(required=True,choices=['top','child','no'],default='top')
   description = ndb.TextProperty()
   refs = ndb.StructuredProperty(RouteRefStructure,repeated=True)
@@ -58,7 +58,7 @@ class Route(Taggable, model.Base):
   #modified = ndb.DateTimeProperty(auto_now=True)
 
   def add_ref(self,ref_structure=None,ref_key=None,copy=True):
-    """Add a reference strcuture, use this instead of directly add it to the property
+    """Add a reference structure, use this instead of directly add it to the property
     'refs'.
     If a ref_strcuture is given this is used, otherwise a ref_key needs to be added.
     The structure is then generated automatically.
@@ -147,11 +147,12 @@ class Route(Taggable, model.Base):
 
   @classmethod
   def get_dbs(
-      cls, name=None, collection=None, geo=None, creator=None, **kwargs
+      cls, name=None,geo=None, creator=None, **kwargs
     ):
+    kwargs = cls.get_col_dbs(**kwargs)
+    kwargs = cls.get_tags_dbs(**kwargs)
     return super(User, cls).get_dbs(
         name=name or util.param('name', None),
-        collection=collection or util.param('collection', None),
         geo=geo or util.param('geo', None),
         creater=creater or util.param('creater', ndb.Key),
         **kwargs

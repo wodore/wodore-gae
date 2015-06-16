@@ -1,0 +1,30 @@
+# extends 'admin/admin_base.html'
+# import 'macro/forms.html' as forms
+
+# block admin_content
+  <form method="POST" action="." enctype="multipart/form-data" novalidate>
+    <div class="row">
+      <fieldset class="col-sm-6">
+        {{form.csrf_token}}
+        {{forms.text_field(form.brand_name, autofocus=True)}}
+        {{forms.email_field(form.feedback_email)}}
+        {{forms.textarea_field(form.tags)}}
+        {{forms.input_field(form.icon, multiple="")}}
+      </fieldset>
+      <fieldset class="col-sm-6">
+        {{forms.checkbox_field(form.notify_on_new_user)}}
+        {{forms.checkbox_field(form.verify_email)}}
+        {{forms.checkbox_field(form.check_unique_email)}}
+        {{forms.checkbox_field(form.email_authentication)}}
+      </fieldset>
+    </div>
+    <hr>
+    <div class="row">
+      <div class="col-md-6 col-md-offset-3">
+        <button type="submit" class="btn btn-primary btn-lg btn-block btn-loading" {{forms.data_loading_text()}}>
+          Init App
+        </button>
+      </div>
+    </div>
+  </form>
+# endblock

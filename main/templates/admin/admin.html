@@ -6,6 +6,7 @@
   </div>
 
   <div class="row text-center">
+    {{admin_link('Initialization', 'cogs', url_for('admin_init'))}}
     {{admin_link('App Config', 'cog', url_for('admin_config'))}}
     {{admin_link('Auth Config', 'lock', url_for('admin_auth'))}}
     {{admin_link('Populate', 'table', url_for('admin_populate'))}}
